@@ -1,0 +1,18 @@
+# Marcosville repo — ignore conventional dev artifacts.
+# No ECHELON or other unrelated repos anywhere here.
+
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.swp
+.pnpm-store/
+prisma/migrations/dev.db*
+*.tsbuildinfo
