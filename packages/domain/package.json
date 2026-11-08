@@ -1,7 +1,7 @@
 {
   "name": "@marcosville/domain",
   "version": "0.0.1",
-  "description": "Domain models and interfaces for Marcosville",
+  "description": "Domain models and interfaces for MARCUS VALE",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

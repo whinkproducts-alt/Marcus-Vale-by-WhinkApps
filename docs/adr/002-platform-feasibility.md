@@ -6,7 +6,7 @@ P0 requires verification that the proposed iOS and Android platform capabilities
 
 ## Decision
 
-1. **CarPlay conversation entitlement:** The entitlement `com.apple.developer.carplay-voice-based-conversation` exists in Apple\u2019s official CarPlay documentation and is available from **iOS 26.4**. It is a separate entitlement not already granted to WHINK. This is a known entitlement; it must be explicitly requested, and implementation must follow the developer‑guide templates and minimum SDK. This is a **PLATFORM FACT** for Marcosville.
+1. **CarPlay conversation entitlement:** The entitlement `com.apple.developer.carplay-voice-based-conversation` exists in Apple\u2019s official CarPlay documentation and is available from **iOS 26.4**. It is a separate entitlement not already granted to WHINK. This is a known entitlement; it must be explicitly requested, and implementation must follow the developer‑guide templates and minimum SDK. This is a **PLATFORM FACT** for MARCUS VALE.
 
 2. **Background notifications:** Apple\u2019s background update guide explicitly says silent push is not guaranteed; developers must assume it is unreliable. CarPlay voice entitlement is **not** a persistent listening guarantee. This is a **PLATFORM FACT**.
 

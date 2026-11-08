@@ -1,8 +1,8 @@
-# Marcosville
+# MARCUS VALE
 
 ## Summary
 
-**Marcosville** is a new standalone iOS/Android executive-assistant application owned by Marcus Vale (Founder‑private AI executive assistant reporting only to Founder Victor).
+**MARCUS VALE** is a new standalone iOS/Android executive-assistant application owned by Marcus Vale (Founder‑private AI executive assistant reporting only to Founder Victor).
 
 - **Scope**: Independent implementation, zero ECHELON‑CORP dependencies (reference only).
 - **Design**: Native SwiftUI (iOS) and Jetpack Compose (Android) clients; new TypeScript modular‑monolith backend with Fastify, PostgreSQL + pgvector, one authoritative durable scheduler, OIDC issuer and modular adapters.
@@ -11,7 +11,7 @@
 
 ## Repository Boundary
 
-Created in this new repo `Marcosville`. All development respects zero mutation of ECHELON‑CORP (`whinkproducts‑alt/ECHELON‑CORP`). Reference commit: `bcdd0caa18201cf1c0e09adc71aef7855365f495`.
+Created in this new repo `MARCUS VALE`. All development respects zero mutation of ECHELON‑CORP (`whinkproducts‑alt/ECHELON‑CORP`). Reference commit: `bcdd0caa18201cf1c0e09adc71aef7855365f495`.
 
 ## Getting Started (Dev)
 
@@ -82,4 +82,4 @@ Assuming Founder approval to proceed, the next ordered phase (P1) will produce t
 
 ---
 
-*Generated per the Marcosville execution prompt. No ECHELON code is imported or used.*
+*Generated per the MARCUS VALE execution prompt. No ECHELON code is imported or used.*

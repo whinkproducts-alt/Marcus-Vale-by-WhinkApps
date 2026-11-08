@@ -1,7 +1,7 @@
 {
   "name": "@marcosville/database",
   "version": "0.0.1",
-  "description": "Database schema and ORM for Marcosville",
+  "description": "Database schema and ORM for MARCUS VALE",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
