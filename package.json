@@ -1,0 +1,25 @@
+{
+  "name": "marcosville",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "apps/*"
+    ],
+    "nohoist": [
+      "**/*"
+    ]
+  },
+  "scripts": {
+    "build": "echo 'build placeholder'",
+    "test": "echo 'test placeholder'",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "postinstall": "prisma skills sync || exit 0"
+  },
+  "devDependencies": {
+    "fastify": "^5.12.8",
+    "prisma": "8.0.0-rc.33"
+  }
+}
