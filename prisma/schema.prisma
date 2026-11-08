@@ -1,0 +1,327 @@
+// Marcosville PostgreSQL + pgvector schema
+// Reference: https://www.prisma.io/docs/concepts/database-connectors/postgresql
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+ datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+ }
+
+// Core entities
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  lastSeenAt       DateTime?
+  deviceId         String?   // Current device identifier
+  sessionVersion   Int       @default(1)
+  isFounder        Boolean   @default(false)
+  
+  // Relationships
+  sessions         Session[]
+  devices          Device[]
+  conversations     Conversation[]
+  tasks            Task[]
+  approvals        Approval[]
+  briefings        Briefing[]
+  memories         Memory[]
+  connections      Connection[]
+  operations       Operation[]
+  
+  @@index([email])
+ }
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  deviceId         String
+  sessionToken     String    @unique
+  accessToken      String
+  refreshToken     String
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  lastSeenAt       DateTime?
+  isRevoked        Boolean   @default(false)
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  device           Device    @relation(fields: [deviceId], references: [id])
+  
+  @@index([userId])
+  @@index([sessionToken])
+ }
+
+model Device {
+  id               String    @id @default(cuid())
+  userId           String
+  deviceId         String    @unique // iOS UDID / Android Android ID
+  platform         String    // "ios", "android", "carplay", "android-auto"
+  appVersion        String
+  osVersion        String
+  deviceModel      String
+  pushToken         String?
+  notificationPrefs JSON
+  isActive         Boolean   @default(true)
+  lastSeenAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  sessions         Session[]
+  
+  @@index([userId])
+  @@index([deviceId])
+ }
+
+model Conversation {
+  id               String    @id @default(cuid())
+  userId           String
+  title            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  isArchived       Boolean   @default(false)
+  lastMessageAt    DateTime?
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  messages         Message[]
+  
+  @@index([userId])
+  @@index([createdAt])
+ }
+
+model Message {
+  id               String    @id @default(cuid())
+  conversationId   String
+  role             String    // "user", "assistant", "system"
+  content          String
+  contentType      String    // "text", "voice", "analysis"
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  messageId        String?   // Client operation ID
+  source           String?   // "marcus", "whink", "external"
+  
+  // Relationships
+  conversation     Conversation @relation(fields: [conversationId], references: [id])
+  
+  @@index([conversationId])
+  @@index([createdAt])
+  @@index([role])
+ }
+
+model Task {
+  id               String    @id @default(cuid())
+  userId           String
+  title            String
+  description       String?
+  status           String    // "pending", "in_progress", "completed", "cancelled"
+  priority         String    // "low", "medium", "high", "urgent"
+  taskClass        String    // "private", "delegated", "corporal", "executive"
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  dueAt            DateTime?
+  completedAt      DateTime?
+  parentTaskId     String?
+  approvalId       String?
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  parentTask       Task?     @relation("subtasks", fields: [parentTaskId], references: [id])
+  subTasks         Task[]    @relation("subtasks")
+  approval         Approval? @relation(fields: [approvalId], references: [id])
+  
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+ }
+
+model Approval {
+  id               String    @id @default(cuid())
+  requestId        String    @unique // Content hash + timestamp
+  userId           String
+  targetType       String    // "task", "expense", "deployment", "policy"
+  targetId         String
+  action           String    // "approve", "reject", "delegate", "cancel"
+  reason           String?
+  evidenceHash     String?
+  status           String    // "pending", "approved", "rejected", "expired"
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime
+  decidedAt        DateTime?
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  task             Task?     @relation(fields: [targetId], references: [id])
+  
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([expiresAt])
+ }
+
+model Briefing {
+  id               String    @id @default(cuid())
+  userId           String
+  type             String    // "daily", "meeting", "routine", "summary"
+  content          String
+  source           String    // "calendar", "emails", "tasks", "messages"
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  sourceCutoff     DateTime
+  isRead           Boolean   @default(false)
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+ }
+
+model Memory {
+  id               String    @id @default(cuid())
+  userId           String
+  compartment      String    // "canon", "founder_profile", "private_episodic", "private_semantic", "procedural", "working"
+  content          String
+  contentType      String    // "text", "vector", "summary"
+  embedding        String?   // pgvector compatible
+  confidence       Float     @default(0.5)
+  sourceId         String?   // Reference to original source
+  sourceType       String?   // "conversation", "task", "external"
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  expiresAt        DateTime?
+  isDeleted        Boolean   @default(false)
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([compartment])
+  @@index([createdAt])
+  @@fulltext([content])
+ }
+
+model Connection {
+  id               String    @id @default(cuid())
+  userId           String
+  provider         String    // "gmail", "microsoft", "sms", "twilio", "whats-app", "telegram"
+  connectionId     String    @unique // Provider's connection ID
+  displayName      String
+  consentStatus    String    // "granted", "denied", "expired"
+  consentGrantedAt  DateTime?
+  consentExpiresAt DateTime?
+  capabilities      JSON
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  operations       Operation[]
+  
+  @@index([userId])
+  @@index([provider])
+  @@index([consentStatus])
+ }
+
+model Operation {
+  id               String    @id @default(cuid())
+  userId           String
+  connectionId     String
+  operationType    String    // "send_email", "read_calendar", "send_sms", "make_call"
+  operationData   JSON
+  status           String    // "pending", "accepted", "completed", "failed", "unknown"
+  providerResponse JSON?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  completedAt      DateTime?
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  connection       Connection @relation(fields: [connectionId], references: [id])
+  
+  @@index([userId])
+  @@index([connectionId])
+  @@index([status])
+  @@index([createdAt])
+ }
+
+// Policies and Safety
+model Policy {
+  id               String    @id @default(cuid())
+  name             String    @unique
+  description       String
+  policyClass      String    // "A", "B", "C"
+  isSystem         Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  // Relationships
+  assignments       PolicyAssignment[]
+ }
+
+model PolicyAssignment {
+  id               String    @id @default(cuid())
+  userId           String
+  policyId         String
+  assignmentType   String    // "mission", "scope", "exception"
+  assignmentData   JSON
+  isActive         Boolean   @default(true)
+  grantedAt        DateTime  @default(now())
+  expiresAt        DateTime?
+  grantedBy        String?   // User who granted this assignment
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  policy           Policy   @relation(fields: [policyId], references: [id])
+  
+  @@index([userId])
+  @@index([policyId])
+  @@index([assignmentType])
+ }
+
+// Budget and Usage Tracking
+model Budget {
+  id               String    @id @default(cuid())
+  userId           String
+  month            String    // "2024-01", "2024-02"
+  totalBudget      Decimal   @db.Decimal(12,2)
+  usedBudget       Decimal   @db.Decimal(12,2)   @default(0)
+  overageBudget    Decimal   @db.Decimal(12,2)   @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  usageEvents      UsageEvent[]
+  
+  @@index([userId])
+  @@index([month])
+ }
+
+model UsageEvent {
+  id               String    @id @default(cuid())
+  userId           String
+  modelName        String
+  provider         String
+  inputTokens      Int       @default(0)
+  outputTokens     Int       @default(0)
+  cost             Decimal   @db.Decimal(10,6)
+  usageTimestamp   DateTime  @default(now())
+  purpose          String?   // "conversation", "analysis", "summarization"
+  
+  // Relationships
+  user             User      @relation(fields: [userId], references: [id])
+  budget           Budget    @relation(fields: [userId], references: [id]) // For budget tracking
+  
+  @@index([userId])
+  @@index([usageTimestamp])
+ }

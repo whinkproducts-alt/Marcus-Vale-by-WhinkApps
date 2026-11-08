@@ -1,0 +1,19 @@
+{
+  "name": "@marcosville/domain",
+  "version": "0.0.1",
+  "description": "Domain models and interfaces for Marcosville",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "@types/jest": "^29.0.0"
+  }
+}
