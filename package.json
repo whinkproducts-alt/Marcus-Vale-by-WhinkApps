@@ -1,25 +1,19 @@
 {
   "name": "marcosville",
   "private": true,
+  "version": "0.0.1",
   "workspaces": {
     "packages": [
       "packages/*",
       "apps/*"
     ],
-    "nohoist": [
-      "**/*"
-    ]
+    "nohoist": ["**/*"]
   },
   "scripts": {
-    "build": "echo 'build placeholder'",
-    "test": "echo 'test placeholder'",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy",
-    "db:push": "prisma db push",
-    "postinstall": "prisma skills sync || exit 0"
-  },
-  "devDependencies": {
-    "fastify": "^5.12.8",
-    "prisma": "8.0.0-rc.33"
+    "build": "pnpm --filter marcosville-api build && pnpm --filter marcosville-ios build && pnpm --filter marcosville-android build",
+    "test": "pnpm --filter marcosville-api test && pnpm --filter marcosville-ios test && pnpm --filter marcosville-android test",
+    "db:generate": "pnpm --filter marcosville-database db:generate",
+    "db:migrate": "pnpm --filter marcosville-database db:migrate",
+    "db:push": "pnpm --filter marcosville-database db:push"
   }
 }
