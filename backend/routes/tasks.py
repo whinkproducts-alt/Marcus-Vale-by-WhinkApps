@@ -43,6 +43,8 @@ async def create_task(task: TaskCreate, db: AsyncSession = Depends(get_db)):
         status="pending",
         sensitivity=task.sensitivity,
         directorate=task.directorate,
+        subsidiary=task.subsidiary,
+        target_subsidiaries=task.target_subsidiaries,
         deadline=task.deadline,
         deadline_str=iso_utc(task.deadline) if task.deadline else None,
     )

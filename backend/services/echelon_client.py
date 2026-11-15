@@ -18,6 +18,8 @@ ALLOWED_FIELDS = (
     "approval",
     "sensitivity",
     "directorate",
+    "subsidiary",
+    "target_subsidiaries",
 )
 
 

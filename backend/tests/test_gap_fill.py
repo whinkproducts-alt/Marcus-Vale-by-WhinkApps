@@ -180,3 +180,14 @@ async def test_sse_event_updates_handoff(client, echelon, maker):
     async with maker() as s:
         row = (await s.execute(select(Task))).scalars().first()
         assert row.status == "blocked"
+
+
+async def test_subsidiary_fields_reach_echelon_and_bad_ids_are_refused(client, echelon):
+    t = await make_task(client, subsidiary="consult", target_subsidiaries=["trades", "apps"])
+    a = await approve(client, t["id"])
+    await client.post("/echelon/handoff", params={"task_id": t["id"], "approval_id": a["id"]})
+    body = json.loads(echelon.requests[0].content)
+    assert body["subsidiary"] == "consult" and body["target_subsidiaries"] == ["trades", "apps"]
+    assert a["content_hash"] == GOLDEN  # the hash covers title, goal and deadline only
+    bad = await client.post("/tasks/", json={"title": "A", "goal": "B", "subsidiary": "nope"})
+    assert bad.status_code == 422

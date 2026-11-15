@@ -91,6 +91,8 @@ async def create_handoff(task_id: UUID, approval_id: UUID, db: AsyncSession = De
         approval=_approval_payload(approval),
         sensitivity=task.sensitivity,
         directorate=task.directorate,
+        subsidiary=task.subsidiary,
+        target_subsidiaries=task.target_subsidiaries or [],
     )
     payload = ec.seal_payload(handoff.model_dump(mode="json"))
 

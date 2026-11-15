@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field, field_validator
 
 Sensitivity = Literal["standard", "proprietary", "financial"]
 Method = Literal["voice", "tap"]
+# Same ids as ECHELON's config; ECHELON rejects anything else.
+Subsidiary = Literal["consult", "real-estate", "trades", "apps", "frontliners"]
 
 
 class VoiceRequest(BaseModel):
@@ -35,6 +37,8 @@ class TaskCreate(BaseModel):
     deadline: Optional[datetime] = None
     sensitivity: Sensitivity = "standard"
     directorate: Optional[str] = Field(default=None, max_length=100)
+    subsidiary: Optional[Subsidiary] = None
+    target_subsidiaries: list[Subsidiary] = Field(default_factory=list, max_length=4)
 
     @field_validator("deadline")
     @classmethod
@@ -68,6 +72,8 @@ class EchelonHandoffCreate(BaseModel):
     approval: EchelonApproval
     sensitivity: Sensitivity = "standard"
     directorate: Optional[str] = None
+    subsidiary: Optional[Subsidiary] = None
+    target_subsidiaries: list[Subsidiary] = Field(default_factory=list, max_length=4)
 
 
 class ResumeRequest(BaseModel):

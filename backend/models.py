@@ -41,6 +41,8 @@ class Task(Base):
     deadline_str = Column(String(64))  # exact ISO string hashed and sent to ECHELON
     sensitivity = Column(String(20))  # standard | proprietary | financial
     directorate = Column(String(100))
+    subsidiary = Column(String(20))
+    target_subsidiaries = Column(JSON, default=list)
     client_operation_id = Column(Uuid, default=uuid.uuid4)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
