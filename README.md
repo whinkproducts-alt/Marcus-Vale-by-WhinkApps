@@ -148,6 +148,7 @@ marcus-vale/
   - `sensitivity` (standard | proprietary | financial)
   - `directorate` (optional)
 - **Status Polling**: Marcus polls ECHELON status for every task he hands off.
+- **Full contract**: see [docs/ECHELON-INTEGRATION.md](docs/ECHELON-INTEGRATION.md).
 
 ### Scheduling
 - **Morning Briefing**: 9 AM weekdays
