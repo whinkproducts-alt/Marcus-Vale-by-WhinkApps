@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- EXAMPLE, not installed. Nightly Marcus backup at 02:30. Copy to ~/Library/LaunchAgents/com.whink.marcus-backup.plist,
+     replace REPLACE_WITH_REPO_PATH and REPLACE_WITH_HOME, then: launchctl load ~/Library/LaunchAgents/com.whink.marcus-backup.plist
+     If the Mac is asleep at 02:30 launchd runs the job when it wakes. See docs/OPERATIONS.md. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.whink.marcus-backup</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>REPLACE_WITH_REPO_PATH/scripts/ops/nightly-backup.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- launchd has a minimal PATH; docker lives in /usr/local/bin (Docker Desktop) or /opt/homebrew/bin (OrbStack, Homebrew). -->
+    <key>PATH</key><string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>2</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+  <key>StandardOutPath</key><string>REPLACE_WITH_HOME/Library/Logs/marcus-backup.log</string>
+  <key>StandardErrorPath</key><string>REPLACE_WITH_HOME/Library/Logs/marcus-backup.log</string>
+</dict>
+</plist>
