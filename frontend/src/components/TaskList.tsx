@@ -107,6 +107,7 @@ const TaskList: React.FC = () => {
       const r = await axios.post(`${API_BASE}/tasks/${task.id}/approve`, null, { params: { method: 'tap' }, ...pinHeaders() });
       remember(task.id, r.data.approval.id);
       setError('');
+      setPin(''); // one entry, one approval: the next one asks again
       return r.data.approval.id;
     } catch (e) {
       fail(e);
@@ -150,6 +151,7 @@ const TaskList: React.FC = () => {
     try {
       await axios.post(`${API_BASE}/control/resume`, null, pinHeaders());
       setError('');
+      setPin('');
       load();
     } catch (e) {
       fail(e);
