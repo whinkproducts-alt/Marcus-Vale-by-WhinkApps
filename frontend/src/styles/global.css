@@ -29,6 +29,7 @@ body {
 
 .app {
   min-height: 100vh;
+  min-height: 100dvh; /* the real visible height on mobile Safari, where 100vh includes the hidden toolbar */
   display: flex;
   flex-direction: column;
 }
@@ -117,8 +118,13 @@ body {
 /* Voice Button */
 .voice-button {
   position: fixed;
-  bottom: 2rem;
+  bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
   left: 50%;
+  /* Hold-to-talk: stop the iOS long-press menu and text selection from cancelling the press. */
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
   transform: translateX(-50%);
   width: 120px;
   height: 120px;

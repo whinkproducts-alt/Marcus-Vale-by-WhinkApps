@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import VoiceButton from './components/VoiceButton';
 import ChatView from './components/ChatView';
@@ -9,11 +9,22 @@ import Briefings from './components/Briefings';
 import axios from 'axios';
 
 const API_BASE = '/api';
+// An empty WAV. Playing it inside the press unlocks this element for the reply, which arrives after several network calls.
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
 
 function App() {
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([]);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // iOS Safari only lets audio start from a user gesture, so the one element is made and unlocked in the press.
+  const unlockAudio = () => {
+    if (audioRef.current) return;
+    const el = new Audio(SILENT_WAV);
+    el.play().catch(() => {});
+    audioRef.current = el;
+  };
 
   const handleVoiceInput = async (audio: Blob) => {
     setIsListening(false);
@@ -45,10 +56,15 @@ function App() {
       const audioData = audioResponse.data.audio;
       const audioBlob = new Blob([new Uint8Array(atob(audioData).split('').map(c => c.charCodeAt(0)))], { type: audioResponse.data.content_type || 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob);
-      const audioElement = new Audio(audioUrl);
-      audioElement.play();
+      const audioElement = audioRef.current ?? new Audio();
+      audioRef.current = audioElement;
+      audioElement.src = audioUrl;
+      audioElement.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
       setIsSpeaking(true);
-      audioElement.onended = () => setIsSpeaking(false);
+      await audioElement.play().catch(() => setIsSpeaking(false));
     } catch (error) {
       console.error('Error:', error);
       setMessages((m) => [...m, { text: "Sorry, I encountered an error.", isUser: false }]);
@@ -80,6 +96,7 @@ function App() {
                   isSpeaking={isSpeaking}
                   onStart={() => setIsListening(true)}
                   onStop={() => setIsListening(false)}
+                  onPress={unlockAudio}
                   onVoiceInput={handleVoiceInput}
                 />
               </>
