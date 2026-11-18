@@ -20,7 +20,7 @@ To stop sharing: `tailscale serve --https=443 off`.
 
 - **Never use `tailscale funnel`.** Funnel puts Marcus on the public internet.
 - **The nginx proxy adds the API key to every request it receives.** Anyone who can reach this URL can read and use Marcus without a key. Tailscale limits reach to your tailnet, so keep the tailnet to your own devices and apply the ACL below. Do not share the node with other people.
-- **The approval PIN is what protects approvals.** Approving a task, approving an approval, and Resume require the header `X-Approval-Pin` to match `APPROVAL_PIN` in `.env` (Freeze does not, so the kill switch stays one tap). The PIN is typed on the phone and is never added by nginx. This is enforced by the backend change in the approval-PIN work (stream S2). Until that is merged, only the ACL protects approvals. Compose refuses to start without `APPROVAL_PIN` set.
+- **The approval PIN is what protects approvals.** Approving a task, approving an approval, and Resume require the header `X-Approval-Pin` to match `APPROVAL_PIN` in `.env` (Freeze does not, so the kill switch stays one tap). The PIN is typed on the phone and is never added by nginx. The PIN is at least 8 characters. Five wrong PINs lock every approval and Resume for 15 minutes, the right PIN included, and anyone who can reach the proxy can trigger that lockout again every 15 minutes to keep Marcus frozen. Freeze still works. A restart of the backend container clears the lockout (the counter is in memory). Compose refuses to start without `APPROVAL_PIN` set.
 - Do not publish port 8002 (backend) or any other Marcus port. Only the frontend on 7000 goes through `serve`.
 - ECHELON is not exposed by this. Marcus reaches it from the Mac at `host.docker.internal:3000`.
 
