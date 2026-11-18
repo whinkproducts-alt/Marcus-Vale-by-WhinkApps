@@ -5,6 +5,7 @@ import ChatView from './components/ChatView';
 import TaskList from './components/TaskList';
 import MemoryReview from './components/MemoryReview';
 import Settings from './components/Settings';
+import Briefings from './components/Briefings';
 import axios from 'axios';
 
 const API_BASE = '/api';
@@ -63,6 +64,7 @@ function App() {
           <nav>
             <Link to="/">Chat</Link>
             <Link to="/tasks">Tasks</Link>
+            <Link to="/briefings">Briefings</Link>
             <Link to="/memory">Memory</Link>
             <Link to="/settings">Settings</Link>
           </nav>
@@ -83,6 +85,7 @@ function App() {
               </>
             } />
             <Route path="/tasks" element={<TaskList />} />
+            <Route path="/briefings" element={<Briefings />} />
             <Route path="/memory" element={<MemoryReview />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
