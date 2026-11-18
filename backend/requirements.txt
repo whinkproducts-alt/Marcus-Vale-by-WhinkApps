@@ -1,13 +1,12 @@
-fastapi==0.104.1
+fastapi==0.164.0
 uvicorn==0.24.0
 sqlalchemy==2.0.23
 asyncpg==0.29.0
 pgvector==0.2.4
-pydantic==2.5.3
-pydantic-settings==2.1.0
+pydantic==2.14.3
+pydantic-settings==2.16.3
 httpx==0.25.2
-python-multipart==0.0.6
-python-dotenv==1.0.0
+python-dotenv==1.2.2
 apscheduler==3.10.4
 pytz==2024.1
 greenlet
@@ -18,6 +17,4 @@ certifi
 idna
 httpcore
 aiosqlite
-typing_extensions==4.9.0
-pytest==7.4.4
-pytest-asyncio==0.21.1
+typing_extensions==4.16.0
