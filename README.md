@@ -196,11 +196,8 @@ cd frontend
 npm run dev
 ```
 
-### Server Mode
-```bash
-# Set MARCUS_ENV=server in .env
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
+### iPhone / iPad (HTTPS over Tailscale)
+Run Marcus as in Local Mode, then follow [docs/TAILSCALE.md](docs/TAILSCALE.md). There is no separate production compose file.
 
 ---
 
