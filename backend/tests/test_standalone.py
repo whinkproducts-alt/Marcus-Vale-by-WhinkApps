@@ -39,7 +39,7 @@ async def test_kill_switch_works_without_echelon(client, standalone, echelon):
     r = await client.post("/voice/chat", json={"prompt": "Marcus, stop everything"})
     assert "could not" not in r.json()["response"].lower()
     assert (await client.get("/control/status")).json()["frozen"] is True
-    await client.post("/voice/chat", json={"prompt": "Marcus, resume"})
+    await client.post("/control/resume")
     assert (await client.get("/control/status")).json()["frozen"] is False
     assert echelon.requests == []
 

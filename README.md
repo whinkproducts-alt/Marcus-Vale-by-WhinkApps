@@ -58,7 +58,7 @@ npm run dev
 | Backend | FastAPI (Python) |
 | Database | PostgreSQL + pgvector |
 | ORM | SQLAlchemy (async) |
-| Auth | OIDC (Keycloak) + API Key |
+| Auth | API key (`X-API-Key`) on every route, plus an approval PIN (`X-Approval-Pin`) on approving, resuming and answering a blocked task |
 | STT | OpenAI Whisper (via OmniRoute) |
 | TTS | Kokoro (via OmniRoute) |
 | LLM | OmniRoute (`http://127.0.0.1:20128/v1`) |
@@ -123,7 +123,7 @@ marcus-vale/
 - **Lane 3 (Victor)**: Ambiguous tasks, protected-class actions, anything outside Marcus's authority.
 
 ### Approval System
-- **Voice/Tap Approval**: One verbal or tap approval from Victor is sufficient.
+- **Voice/Tap Approval**: One tap approval from Victor is sufficient. Approving a task, resuming after a freeze and answering a blocked ECHELON task also need the approval PIN (`APPROVAL_PIN`, at least 8 characters). Five wrong PINs lock approvals for 15 minutes. Freezing never needs it.
 - **Protected Classes**: Always require a second check for:
   1. Any action that spends money
   2. Any action that shares proprietary material outside WHINK Group
@@ -159,7 +159,7 @@ marcus-vale/
 ### Kill Switch
 - **Phrase**: "Marcus, stop everything."
 - **Action**: Freeze all queued tasks and all pending ECHELON handoffs.
-- **Resume**: "Marcus, resume."
+- **Resume**: in the app only: enter the approval PIN and tap Resume. Saying "Marcus, resume" does not resume, because spoken or pasted text cannot carry the PIN.
 
 ---
 
@@ -168,7 +168,8 @@ marcus-vale/
 Run tests with:
 ```bash
 cd backend
-pytest tests/ -v
+pip install -r requirements-dev.txt
+python -m pytest tests/ -v
 ```
 
 Tests cover:

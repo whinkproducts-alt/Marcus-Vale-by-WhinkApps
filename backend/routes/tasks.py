@@ -13,17 +13,10 @@ from schemas import Method, TaskCreate
 from services.control_state import FROZEN_MESSAGE, get_frozen
 from services.hashing import iso_utc, task_hash
 from services.lane_router import classify_lane
-from services.trust import is_trusted, record_clean_approval
+from services.auth import require_approval_pin
 
 log = logging.getLogger("marcus.tasks")
 router = APIRouter()
-
-
-async def needs_approval(db: AsyncSession, task: Task) -> bool:
-    """False only for a trusted Lane 1 action. ECHELON handoffs always carry a real approval."""
-    if task.sensitivity != "standard" or task.lane in ("lane2", "lane3"):
-        return True
-    return not await is_trusted("lane1_action", db)
 
 
 @router.post("/")
@@ -54,18 +47,18 @@ async def create_task(task: TaskCreate, db: AsyncSession = Depends(get_db)):
     return {
         "task": new_task,
         "lane": lane,
-        "requires_approval": await needs_approval(db, new_task),
+        "requires_approval": True,
         "echelon_connected": settings.echelon_enabled,
     }
 
 
 @router.get("/")
-async def list_tasks(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Task))
+async def list_tasks(limit: int = 200, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Task).order_by(Task.created_at.desc()).limit(min(max(limit, 1), 500)))
     return {"tasks": result.scalars().all()}
 
 
-@router.post("/{task_id}/approve")
+@router.post("/{task_id}/approve", dependencies=[Depends(require_approval_pin)])
 async def approve_task(task_id: UUID, method: Method = "voice", db: AsyncSession = Depends(get_db)):
     task = await db.get(Task, task_id)
     if not task:
@@ -91,6 +84,4 @@ async def approve_task(task_id: UUID, method: Method = "voice", db: AsyncSession
     db.add(approval)
     await db.commit()
     await db.refresh(approval)
-    if task.lane == "lane1":
-        await record_clean_approval("lane1_action", db)
     return {"approval": approval, "content_hash": content_hash}

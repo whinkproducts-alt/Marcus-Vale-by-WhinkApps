@@ -1,4 +1,4 @@
-"""Freeze, never-store, trust, spend. Batch 2."""
+"""Freeze, never-store, spend. Batch 2."""
 import logging
 import uuid
 
@@ -8,7 +8,6 @@ from sqlalchemy import select
 
 from models import ChatMessage, Memory, SpendLog, Briefing, Task
 from services.control_state import get_frozen
-from services.trust import is_trusted, record_clean_approval, revoke_trust
 
 
 async def mk(client, **kw):
@@ -55,7 +54,9 @@ async def test_kill_phrase_on_real_route(client, echelon, phrase):
     assert "paused" in r.json()["response"].lower()
     assert (await client.get("/control/status")).json()["frozen"] is True
     r = await client.post("/voice/chat", json={"prompt": "Marcus, resume"})
-    assert r.status_code == 200
+    assert r.status_code == 200 and "pin" in r.json()["response"].lower()
+    assert (await client.get("/control/status")).json()["frozen"] is True  # speech cannot resume
+    assert (await client.post("/control/resume")).status_code == 200  # the client carries the PIN
     assert (await client.get("/control/status")).json()["frozen"] is False
 
 
@@ -103,35 +104,6 @@ async def test_safe_memory_is_saved(client, maker):
     with patch("routes.memory.embed", return_value=[0.0] * 1536):
         r = await client.post("/memory/", json={"content": "Victor prefers short answers", "layer": "layer2"})
     assert r.status_code == 200, r.text
-
-
-async def test_trust_becomes_true_at_20_via_real_flow(client, lane, maker):
-    lane.return_value = "lane1"
-    for i in range(19):
-        t = await mk(client, title=f"t{i}")
-        assert t["requires_approval"] is True
-        await client.post(f"/tasks/{t['task']['id']}/approve")
-    async with maker() as s:
-        assert await is_trusted("lane1_action", s) is False
-    t = await mk(client, title="t19")
-    await client.post(f"/tasks/{t['task']['id']}/approve")
-    async with maker() as s:
-        assert await is_trusted("lane1_action", s) is True
-    after = await mk(client, title="after")
-    assert after["requires_approval"] is False
-    fin = await mk(client, title="money", sensitivity="financial")
-    assert fin["requires_approval"] is True  # trust never skips money
-
-
-async def test_revoke_trust_resets(maker):
-    async with maker() as s:
-        for _ in range(20):
-            await record_clean_approval("x", s)
-        assert await is_trusted("x", s) is True
-        await revoke_trust("x", s)
-        assert await is_trusted("x", s) is False
-        await record_clean_approval("x", s)
-        assert await is_trusted("x", s) is False
 
 
 async def test_second_approve_blocked_while_unused(client):

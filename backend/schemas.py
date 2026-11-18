@@ -48,12 +48,6 @@ class TaskCreate(BaseModel):
         return v
 
 
-class ApprovalCreate(BaseModel):
-    task_id: UUID
-    content_hash: str
-    method: Method = "voice"
-
-
 class EchelonApproval(BaseModel):
     approval_id: UUID
     approved_at: datetime

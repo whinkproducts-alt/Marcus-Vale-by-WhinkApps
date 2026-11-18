@@ -3,17 +3,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from models import Approval, EchelonHandoff, Task
 from schemas import EchelonApproval, EchelonHandoffCreate, ResumeRequest
 from services import echelon_client as ec
+from services.auth import require_approval_pin
 from services.control_state import FROZEN_MESSAGE, get_frozen
 from services.hashing import as_utc, task_deadline_str, task_hash
 from services.task_status import DEAD_HANDOFF, task_status_for
-from services.trust import record_clean_approval
 
 log = logging.getLogger("marcus.echelon")
 router = APIRouter()
@@ -62,6 +63,22 @@ async def _latest_handoff(db: AsyncSession, task_id: UUID) -> EchelonHandoff | N
     return result.scalars().first()
 
 
+async def _claim(db: AsyncSession, approval: Approval) -> None:
+    """Spend the approval atomically BEFORE ECHELON is called, so two simultaneous taps cannot both send."""
+    res = await db.execute(
+        update(Approval).where(Approval.id == approval.id, Approval.used == False).values(used=True)  # noqa: E712
+    )
+    if res.rowcount != 1:
+        raise HTTPException(status_code=409, detail="Approval already used")
+    await db.commit()
+
+
+async def _release(db: AsyncSession, approval: Approval) -> None:
+    """ECHELON did not take the task, so the approval is good again."""
+    await db.execute(update(Approval).where(Approval.id == approval.id).values(used=False))
+    await db.commit()
+
+
 def _need_echelon() -> None:
     if not ec.enabled():
         raise HTTPException(status_code=503, detail="ECHELON is not connected")
@@ -96,15 +113,17 @@ async def create_handoff(task_id: UUID, approval_id: UUID, db: AsyncSession = De
     )
     payload = ec.seal_payload(handoff.model_dump(mode="json"))
 
+    await _claim(db, approval)
     try:
         response = await ec.send_task(payload)
-    except ec.EchelonError as e:
-        log.warning("handoff failed: %s", e.public_message())
-        raise _refused(e)
+    except Exception as e:
+        await _release(db, approval)
+        if isinstance(e, ec.EchelonError):
+            log.warning("handoff failed: %s", e.public_message())
+            raise _refused(e)
+        raise
 
-    # Only now is the approval spent.
     status = response.get("status") or "received"
-    approval.used = True
     db.add(
         EchelonHandoff(
             task_id=task.id,
@@ -115,8 +134,12 @@ async def create_handoff(task_id: UUID, approval_id: UUID, db: AsyncSession = De
         )
     )
     task.status = task_status_for(status)
-    await db.commit()
-    await record_clean_approval("echelon_handoff", db)
+    try:
+        await db.commit()
+    except IntegrityError:
+        # The unique index on approval_id caught a second tap that raced past the checks above.
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="Task is already with ECHELON")
     return {"echelon_response": response, "status": status, "task_status": task.status}
 
 
@@ -134,14 +157,17 @@ async def confirm_handoff(task_id: UUID, approval_id: UUID, db: AsyncSession = D
         raise HTTPException(status_code=400, detail="The second approval must be a new one")
     _check_approval(task, approval)
 
+    await _claim(db, approval)
     try:
         response = await ec.confirm_task(handoff.echelon_task_id, _approval_payload(approval))
-    except ec.EchelonError as e:
-        log.warning("confirm failed: %s", e.public_message())
-        raise _refused(e)
+    except Exception as e:
+        await _release(db, approval)
+        if isinstance(e, ec.EchelonError):
+            log.warning("confirm failed: %s", e.public_message())
+            raise _refused(e)
+        raise
 
     status = response.get("status") or "received"
-    approval.used = True
     handoff.status = status
     handoff.response = response
     task.status = task_status_for(status)
@@ -149,9 +175,9 @@ async def confirm_handoff(task_id: UUID, approval_id: UUID, db: AsyncSession = D
     return {"echelon_response": response, "status": status, "task_status": task.status}
 
 
-@router.post("/resume")
+@router.post("/resume", dependencies=[Depends(require_approval_pin)])
 async def resume_blocked(task_id: UUID, body: ResumeRequest, db: AsyncSession = Depends(get_db)):
-    """Send Victor's answer to a blocked ECHELON task."""
+    """Send Victor's answer to a blocked ECHELON task. The note speaks for Victor, so it needs the PIN."""
     _need_echelon()
     if await get_frozen(db):
         raise HTTPException(status_code=503, detail=FROZEN_MESSAGE)

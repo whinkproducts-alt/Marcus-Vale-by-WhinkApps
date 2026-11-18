@@ -8,6 +8,7 @@ from config import settings
 from database import init_db
 from routes import approvals, briefings, control, echelon, memory, spend, tasks, voice
 from routes import settings as settings_routes
+from services.approval_retire import retire_pre_pin_approvals
 from services.auth import require_api_key
 from services.echelon_events import run_listener
 from services.never_store import install_log_filter
@@ -32,6 +33,7 @@ _listener_task = None
 async def startup():
     global _listener_task
     await init_db()
+    await retire_pre_pin_approvals()
     await start_scheduler()
     if settings.echelon_enabled:
         _listener_task = asyncio.create_task(run_listener())

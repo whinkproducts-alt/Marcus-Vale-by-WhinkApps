@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import ControlState
 
-FROZEN_MESSAGE = "Marcus is frozen. Say 'Marcus, resume' to continue."
+FROZEN_MESSAGE = "Marcus is frozen. Enter your PIN in the app and tap Resume to continue."
 
 
 async def get_frozen(db: AsyncSession) -> bool:
