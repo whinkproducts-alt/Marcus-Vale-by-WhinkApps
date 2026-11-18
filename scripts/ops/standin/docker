@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# TEST ONLY. A stand-in for the docker commands the ops scripts use, backed by a REAL local Postgres (initdb/pg_ctl as the
+# postgres user), so pg_dump, pg_restore and psql are real. Used by scripts/ops/test-ops-standin.sh when no Docker daemon exists.
+# shortcut: no pgvector here, so `CREATE EXTENSION ... vector` is swapped for SELECT 1; the pgvector image only runs on a real Docker host.
+set -euo pipefail
+SD=${STANDIN_DIR:?STANDIN_DIR required}
+PGBIN=/usr/lib/postgresql/16/bin
+port_of() { cat "$SD/$1.port" 2>/dev/null || { echo "no such container: $1" >&2; exit 1; }; }
+case "${1:-}" in
+  info) exit "${STANDIN_DOCKER_DOWN:-0}" ;;
+  compose)
+    shift
+    case "$*" in
+      "ps -q postgres") cat "$SD/compose-container" 2>/dev/null || true ;;
+      "up -d") echo "compose up -d" >> "$SD/calls" ;;
+      *) echo "stand-in: unsupported compose args: $*" >&2; exit 1 ;;
+    esac ;;
+  run)
+    shift; name=""; port=""; db=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --name) name=$2; shift ;;
+        -p) port=$(printf %s "$2" | cut -d: -f2); shift ;;
+        -e) case "$2" in POSTGRES_DB=*) db=${2#POSTGRES_DB=} ;; esac; shift ;;
+      esac; shift
+    done
+    dir="$SD/$name.data"; mkdir -p "$dir"; chown postgres "$dir"; chmod 755 "$SD"
+    su postgres -c "$PGBIN/initdb -D $dir -A trust -U postgres >/dev/null"
+    su postgres -c "$PGBIN/pg_ctl -D $dir -o '-p $port -k $dir -c listen_addresses=127.0.0.1' -l $dir/log -w start >/dev/null"
+    echo "$port" > "$SD/$name.port"
+    [ -z "$db" ] || "$PGBIN/createdb" -h 127.0.0.1 -p "$port" -U postgres "$db"
+    echo "$name" ;;
+  exec)
+    shift; [ "${1:-}" != "-i" ] || shift
+    name=$1; shift; port=$(port_of "$name")
+    args=(); for a in "$@"; do [ "$a" = "CREATE EXTENSION IF NOT EXISTS vector" ] && a="SELECT 1"; args+=("$a"); done
+    PATH="$PGBIN:$PATH" PGHOST=127.0.0.1 PGPORT=$port exec "${args[@]}" ;;
+  rm)
+    shift; [ "${1:-}" != "-f" ] || shift
+    name=$1; dir="$SD/$name.data"
+    [ ! -d "$dir" ] || { su postgres -c "$PGBIN/pg_ctl -D $dir -m immediate stop >/dev/null 2>&1" || true; rm -rf "$dir"; }
+    rm -f "$SD/$name.port" ;;
+  *) echo "stand-in: unsupported docker command: $*" >&2; exit 1 ;;
+esac

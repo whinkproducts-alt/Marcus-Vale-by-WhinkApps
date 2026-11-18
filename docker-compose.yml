@@ -35,6 +35,7 @@ services:
       - "127.0.0.1:8768:8880"
 
   backend:
+    restart: unless-stopped
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -45,6 +46,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://whink:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/marcus
       API_KEY: ${API_KEY:?set API_KEY in .env}
+      APPROVAL_PIN: ${APPROVAL_PIN:?set APPROVAL_PIN in .env}
       OMNIROUTE_API_KEY: ${OMNIROUTE_API_KEY:?set OMNIROUTE_API_KEY in .env}
       ECHELON_API_KEY: ${ECHELON_API_KEY:-}
       OMNIROUTE_BASE_URL: http://host.docker.internal:20128/v1
@@ -58,6 +60,7 @@ services:
         condition: service_healthy
 
   frontend:
+    restart: unless-stopped
     build:
       context: ./frontend
       dockerfile: Dockerfile
