@@ -1,4 +1,6 @@
-from pydantic import field_validator
+import logging
+
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Values that must never be accepted as a real secret.
@@ -9,6 +11,11 @@ _PLACEHOLDERS = {
     "marcus-vale-echelon-key",
     "whink_local",
 }
+
+
+DEFAULT_MODEL = "gpt-4o-mini"
+_PRICE_VARS = ("OMNIROUTE_PRICE_IN_PER_1M", "OMNIROUTE_PRICE_OUT_PER_1M", "OMNIROUTE_EMBED_PRICE_PER_1M")
+log = logging.getLogger("marcus.config")
 
 
 class Settings(BaseSettings):
@@ -22,10 +29,12 @@ class Settings(BaseSettings):
     API_KEY: str  # protects every Marcus route (sent as X-API-Key)
     OMNIROUTE_API_KEY: str
     ECHELON_API_KEY: str = ""  # optional: empty means Marcus runs standalone
+    # Victor's approval PIN, sent as X-Approval-Pin. Required while ECHELON is enabled; empty means no approval can pass.
+    APPROVAL_PIN: str = ""
 
     # OmniRoute (self-hosted gateway)
     OMNIROUTE_BASE_URL: str = "http://127.0.0.1:20128/v1"
-    OMNIROUTE_MODEL: str = "gpt-4o-mini"
+    OMNIROUTE_MODEL: str = DEFAULT_MODEL
     # Cost estimates in USD per 1M tokens. Override in .env with your real rates.
     OMNIROUTE_PRICE_IN_PER_1M: float = 0.15
     OMNIROUTE_PRICE_OUT_PER_1M: float = 0.60
@@ -59,6 +68,20 @@ class Settings(BaseSettings):
             raise ValueError("must be a real secret or empty")
         return v.strip()
 
+    @field_validator("APPROVAL_PIN")
+    @classmethod
+    def _pin_long(cls, v: str) -> str:
+        v = v.strip()
+        if v and len(v) < 6:
+            raise ValueError("APPROVAL_PIN must be at least 6 characters")
+        return v
+
+    @model_validator(mode="after")
+    def _pin_needed_with_echelon(self):
+        if self.ECHELON_API_KEY and not self.APPROVAL_PIN:
+            raise ValueError("APPROVAL_PIN must be set (6+ characters) while ECHELON is enabled")
+        return self
+
     @property
     def echelon_enabled(self) -> bool:
         return bool(self.ECHELON_API_KEY)
@@ -78,4 +101,17 @@ class Settings(BaseSettings):
         return v
 
 
+def warn_if_prices_unset(s: "Settings") -> None:
+    """Defaults are gpt-4o-mini rates. A different model with default prices makes the spend cap undercount."""
+    unset = [v for v in _PRICE_VARS if v not in s.model_fields_set]
+    if s.OMNIROUTE_MODEL != DEFAULT_MODEL and unset:
+        log.warning(
+            "OMNIROUTE_MODEL is %s but %s not set: the spend cap uses %s rates and may undercount real cost",
+            s.OMNIROUTE_MODEL,
+            ", ".join(unset),
+            DEFAULT_MODEL,
+        )
+
+
 settings = Settings()
+warn_if_prices_unset(settings)

@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
@@ -13,7 +14,6 @@ from services import echelon_client as ec
 from services.control_state import FROZEN_MESSAGE, get_frozen
 from services.hashing import as_utc, task_deadline_str, task_hash
 from services.task_status import DEAD_HANDOFF, task_status_for
-from services.trust import record_clean_approval
 
 log = logging.getLogger("marcus.echelon")
 router = APIRouter()
@@ -115,8 +115,12 @@ async def create_handoff(task_id: UUID, approval_id: UUID, db: AsyncSession = De
         )
     )
     task.status = task_status_for(status)
-    await db.commit()
-    await record_clean_approval("echelon_handoff", db)
+    try:
+        await db.commit()
+    except IntegrityError:
+        # The unique index on approval_id caught a second tap that raced past the checks above.
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="Task is already with ECHELON")
     return {"echelon_response": response, "status": status, "task_status": task.status}
 
 

@@ -52,8 +52,10 @@ async def create_memory(memory: MemoryCreate, db: AsyncSession = Depends(get_db)
 
 
 @router.get("/")
-async def list_memories(layer: Optional[str] = None, source: Optional[str] = None, db: AsyncSession = Depends(get_db)):
-    query = select(Memory)
+async def list_memories(
+    layer: Optional[str] = None, source: Optional[str] = None, limit: int = 200, db: AsyncSession = Depends(get_db)
+):
+    query = select(Memory).order_by(Memory.timestamp.desc()).limit(min(max(limit, 1), 500))
     if layer:
         query = query.where(Memory.layer == layer)
     if source:

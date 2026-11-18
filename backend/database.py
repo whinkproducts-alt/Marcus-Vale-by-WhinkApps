@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -28,6 +30,10 @@ _PG_ALTERS = [
     "ALTER TABLE echelon_handoffs ADD COLUMN IF NOT EXISTS approval_id UUID",
     "ALTER TABLE echelon_handoffs ALTER COLUMN status TYPE VARCHAR(32)",
 ]
+# Own transaction each: an old database holding duplicate rows must warn, not stop Marcus from starting.
+_PG_OPTIONAL = [
+    "CREATE UNIQUE INDEX IF NOT EXISTS uq_echelon_handoffs_approval_id ON echelon_handoffs (approval_id)",
+]
 
 
 async def init_db():
@@ -40,3 +46,11 @@ async def init_db():
         if is_pg:
             for stmt in _PG_ALTERS:
                 await conn.execute(text(stmt))
+
+    if engine.dialect.name == "postgresql":
+        for stmt in _PG_OPTIONAL:
+            try:
+                async with engine.begin() as conn:
+                    await conn.execute(text(stmt))
+            except Exception as e:
+                logging.getLogger("marcus.database").warning("skipped optional statement (%s): %s", type(e).__name__, stmt)

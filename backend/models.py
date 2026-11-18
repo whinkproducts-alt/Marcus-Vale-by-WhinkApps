@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, DateTime, Float, Boolean, JSON, Integer
+from sqlalchemy import Column, Index, String, Text, DateTime, Float, Boolean, JSON, Integer
 from sqlalchemy import Uuid
 from sqlalchemy.sql import func
 from database import Base
@@ -72,9 +72,11 @@ class SpendLog(Base):
 
 class EchelonHandoff(Base):
     __tablename__ = "echelon_handoffs"
+    # Same name as the idempotent CREATE UNIQUE INDEX in database.py, so a fresh database gets exactly one.
+    __table_args__ = (Index("uq_echelon_handoffs_approval_id", "approval_id", unique=True),)
     id = Column(Uuid, primary_key=True, default=uuid.uuid4)
     task_id = Column(Uuid)
-    approval_id = Column(Uuid)  # the first approval used for this handoff
+    approval_id = Column(Uuid)  # the first approval used for this handoff; one handoff per approval (see index)
     echelon_task_id = Column(String(100))
     # mirrors ECHELON: received | routed | in_progress | done | reconfirmation_required |
     # blocked | paused | frozen | failed | cancelled | rejected
@@ -83,15 +85,6 @@ class EchelonHandoff(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-
-class ActionTrust(Base):
-    __tablename__ = "action_trust"
-    id = Column(Uuid, primary_key=True, default=uuid.uuid4)
-    action_type = Column(String(100))  # e.g. "lane1_action", "echelon_handoff"
-    clean_count = Column(Integer, default=0)  # approvals completed without reversal
-    trusted = Column(Boolean, default=False)
-    revoked_at = Column(DateTime(timezone=True))
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 
 class ControlState(Base):

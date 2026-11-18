@@ -1,4 +1,4 @@
-"""Kill switch. Stops queued tasks and ECHELON handoffs. Conversation, calls and reminders keep working."""
+"""Kill switch. Stops queued tasks and ECHELON handoffs. Conversation keeps working."""
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,7 +40,7 @@ async def do_resume(db: AsyncSession) -> dict:
 
 
 def kill_message(result: dict) -> str:
-    base = "Everything is paused. Calls and reminders are still running. Say 'Marcus, resume' when you're ready."
+    base = "Everything queued is paused. Chat is still available. Say 'Marcus, resume' when you're ready."
     if result["echelon"] not in ("ok", "off"):
         base = (
             "Marcus is paused, but I could not pause ECHELON: "

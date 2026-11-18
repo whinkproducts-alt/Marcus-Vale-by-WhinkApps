@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
+from services.auth import require_approval_pin
 from services.control_state import get_frozen
 from services.freeze import do_freeze, do_resume
 
@@ -13,7 +14,7 @@ async def freeze(db: AsyncSession = Depends(get_db)):
     return await do_freeze(db)
 
 
-@router.post("/resume")
+@router.post("/resume", dependencies=[Depends(require_approval_pin)])
 async def resume(db: AsyncSession = Depends(get_db)):
     return await do_resume(db)
 

@@ -5,6 +5,7 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite://"
 os.environ["API_KEY"] = "test-api-key-0123456789"
 os.environ["OMNIROUTE_API_KEY"] = "test-omniroute-key"
 os.environ["ECHELON_API_KEY"] = "test-echelon-key"
+os.environ["APPROVAL_PIN"] = "246810"
 
 import types
 from unittest.mock import AsyncMock, patch
@@ -23,6 +24,7 @@ from database import Base, get_db
 from main import app
 
 API_KEY = os.environ["API_KEY"]
+PIN = os.environ["APPROVAL_PIN"]
 REAL_CLIENT = httpx.AsyncClient
 
 
@@ -49,7 +51,9 @@ async def client(maker):
             yield s
 
     app.dependency_overrides[get_db] = override_get_db
-    async with REAL_CLIENT(app=app, base_url="http://test", headers={"X-API-Key": API_KEY}) as ac:
+    async with REAL_CLIENT(
+        app=app, base_url="http://test", headers={"X-API-Key": API_KEY, "X-Approval-Pin": PIN}
+    ) as ac:
         yield ac
     app.dependency_overrides.clear()
 

@@ -2,6 +2,7 @@
 import asyncio
 import logging
 from typing import Optional
+from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +22,7 @@ async def _alert_once(db: AsyncSession, key: str, text: str) -> None:
         db.add(Briefing(kind="alert", key=key, text=text))
 
 
-async def apply_event(db: AsyncSession, data: dict) -> bool:
+async def apply_event(db: AsyncSession, data: dict, event_id: Optional[str] = None) -> bool:
     """Apply one feed event. Returns False if the event is not about a task Marcus knows."""
     echelon_id = data.get("task_id")
     status = data.get("status")
@@ -36,15 +37,22 @@ async def apply_event(db: AsyncSession, data: dict) -> bool:
     ).scalars().first()
     if handoff is None:
         return False
+    changed = handoff.status != status  # a replayed event must not alert again
     handoff.status = status
     task = await db.get(Task, handoff.task_id)
     if task is not None:
         task.status = task_status_for(status)
-        if status == "blocked":
-            await _alert_once(db, f"blocked:{echelon_id}", f"ECHELON is blocked on '{task.title}' and needs your answer.")
-        elif status == "reconfirmation_required":
+        # One alert per transition: the key carries the event id so a task that blocks twice alerts twice.
+        suffix = event_id or uuid4().hex
+        if changed and status == "blocked":
             await _alert_once(
-                db, f"reconfirm:{echelon_id}", f"'{task.title}' needs your second approval before ECHELON starts."
+                db, f"blocked:{echelon_id}:{suffix}", f"ECHELON is blocked on '{task.title}' and needs your answer."
+            )
+        elif changed and status == "reconfirmation_required":
+            await _alert_once(
+                db,
+                f"reconfirm:{echelon_id}:{suffix}",
+                f"'{task.title}' needs your second approval before ECHELON starts.",
             )
     await db.commit()
     return True
@@ -58,7 +66,7 @@ async def run_listener() -> None:
                 last: Optional[str] = await get_setting(db, LAST_EVENT_KEY)
             async for event_id, _etype, data in ec.stream_events(last):
                 async with database.AsyncSessionLocal() as db:
-                    await apply_event(db, data)
+                    await apply_event(db, data, event_id)
                     if event_id:
                         await set_setting(db, LAST_EVENT_KEY, event_id)
                 backoff = 1
