@@ -40,7 +40,7 @@ async def do_resume(db: AsyncSession) -> dict:
 
 
 def kill_message(result: dict) -> str:
-    base = "Everything queued is paused. Chat is still available. Say 'Marcus, resume' when you're ready."
+    base = "Everything queued is paused. Chat is still available. Open the app, enter your PIN and tap Resume when you're ready."
     if result["echelon"] not in ("ok", "off"):
         base = (
             "Marcus is paused, but I could not pause ECHELON: "
@@ -48,8 +48,3 @@ def kill_message(result: dict) -> str:
         )
     return base
 
-
-def resume_message(result: dict) -> str:
-    if result["echelon"] not in ("ok", "off"):
-        return f"Marcus is resumed, but ECHELON did not resume: {result['echelon']}."
-    return "Resuming now."

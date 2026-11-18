@@ -53,4 +53,8 @@ async def init_db():
                 async with engine.begin() as conn:
                     await conn.execute(text(stmt))
             except Exception as e:
-                logging.getLogger("marcus.database").warning("skipped optional statement (%s): %s", type(e).__name__, stmt)
+                logging.getLogger("marcus.database").error(
+                    "OPTIONAL STATEMENT SKIPPED (%s): %s. Marcus runs without the double-send backstop. "
+                    "Likely duplicate rows in echelon_handoffs: delete the extra rows for each approval_id, then restart.",
+                    type(e).__name__, stmt,
+                )

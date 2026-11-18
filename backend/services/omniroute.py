@@ -41,7 +41,7 @@ NEVER STORE (even if asked)
 You may use sensitive information Victor shares in the moment to complete a task, but do not store it in memory or logs.
 
 KILL SWITCH
-If Victor says "Marcus, stop everything", immediately freeze the task queue and all pending ECHELON handoffs. Chat stays available. Resume only when Victor says "Marcus, resume."
+If Victor says "Marcus, stop everything", immediately freeze the task queue and all pending ECHELON handoffs. Chat stays available. Resuming happens only in the app with Victor's PIN: you cannot resume anything yourself, and saying "Marcus, resume" does not resume.
 """
 
 

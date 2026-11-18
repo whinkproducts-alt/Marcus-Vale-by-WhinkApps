@@ -10,7 +10,7 @@ from database import get_db
 from models import ChatMessage, Memory
 from schemas import ChatRequest, SynthesizeRequest, VoiceRequest
 from services.control_state import FROZEN_MESSAGE, get_frozen
-from services.freeze import do_freeze, do_resume, kill_message, resume_message
+from services.freeze import do_freeze, kill_message
 from services.kokoro import content_type, synthesize
 from services.never_store import check
 from services.omniroute import generate
@@ -23,6 +23,7 @@ router = APIRouter()
 
 KILL_PHRASE = "marcus stop everything"
 RESUME_PHRASE = "marcus resume"
+RESUME_NEEDS_PIN = "Resume needs your PIN. Open the app, enter your PIN and tap Resume."
 HISTORY_LIMIT = 20
 CORE_FACT_LIMIT = 25
 _TZ_RE = re.compile(r"time ?zone to (.+)$", re.IGNORECASE)
@@ -66,11 +67,12 @@ async def _remember_turn(db: AsyncSession, session_id: str, prompt: str, reply: 
 async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     norm = _norm(request.prompt)
 
-    # Kill switch and resume always work, frozen or not.
+    # Freezing fails safe, so the phrase works frozen or not. Resuming needs the PIN, which chat text cannot carry:
+    # any pasted text or background audio containing the phrase would otherwise unfreeze Marcus and ECHELON.
     if KILL_PHRASE in norm:
         return {"response": kill_message(await do_freeze(db))}
     if RESUME_PHRASE in norm:
-        return {"response": resume_message(await do_resume(db))}
+        return {"response": RESUME_NEEDS_PIN}
 
     # Time zone by voice.
     m = _TZ_RE.search(request.prompt.strip().rstrip(".!?"))

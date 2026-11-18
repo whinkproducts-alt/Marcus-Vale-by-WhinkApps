@@ -19,7 +19,7 @@ log = logging.getLogger("marcus.config")
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     # Environment
     MARCUS_ENV: str = "local"
@@ -72,14 +72,14 @@ class Settings(BaseSettings):
     @classmethod
     def _pin_long(cls, v: str) -> str:
         v = v.strip()
-        if v and len(v) < 6:
-            raise ValueError("APPROVAL_PIN must be at least 6 characters")
+        if v and len(v) < 8:
+            raise ValueError("APPROVAL_PIN must be at least 8 characters")
         return v
 
     @model_validator(mode="after")
     def _pin_needed_with_echelon(self):
         if self.ECHELON_API_KEY and not self.APPROVAL_PIN:
-            raise ValueError("APPROVAL_PIN must be set (6+ characters) while ECHELON is enabled")
+            raise ValueError("APPROVAL_PIN must be set (8+ characters) while ECHELON is enabled")
         return self
 
     @property

@@ -54,7 +54,9 @@ async def test_kill_phrase_on_real_route(client, echelon, phrase):
     assert "paused" in r.json()["response"].lower()
     assert (await client.get("/control/status")).json()["frozen"] is True
     r = await client.post("/voice/chat", json={"prompt": "Marcus, resume"})
-    assert r.status_code == 200
+    assert r.status_code == 200 and "pin" in r.json()["response"].lower()
+    assert (await client.get("/control/status")).json()["frozen"] is True  # speech cannot resume
+    assert (await client.post("/control/resume")).status_code == 200  # the client carries the PIN
     assert (await client.get("/control/status")).json()["frozen"] is False
 
 

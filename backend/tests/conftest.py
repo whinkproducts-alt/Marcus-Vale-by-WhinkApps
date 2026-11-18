@@ -5,7 +5,7 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite://"
 os.environ["API_KEY"] = "test-api-key-0123456789"
 os.environ["OMNIROUTE_API_KEY"] = "test-omniroute-key"
 os.environ["ECHELON_API_KEY"] = "test-echelon-key"
-os.environ["APPROVAL_PIN"] = "246810"
+os.environ["APPROVAL_PIN"] = "24681013"
 
 import types
 from unittest.mock import AsyncMock, patch
@@ -68,6 +68,15 @@ async def anon(maker):
     async with REAL_CLIENT(app=app, base_url="http://test") as ac:
         yield ac
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def fresh_pin_guard():
+    from services.auth import reset_pin_guard
+
+    reset_pin_guard()
+    yield
+    reset_pin_guard()
 
 
 @pytest.fixture(autouse=True)

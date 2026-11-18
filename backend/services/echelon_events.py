@@ -37,18 +37,20 @@ async def apply_event(db: AsyncSession, data: dict, event_id: Optional[str] = No
     ).scalars().first()
     if handoff is None:
         return False
-    changed = handoff.status != status  # a replayed event must not alert again
+    # A status poll may have written this status first, so a feed event (it has an id) always counts; replays are
+    # stopped by the event id in the alert key. Without an id only a real change alerts.
+    fire = event_id is not None or handoff.status != status
     handoff.status = status
     task = await db.get(Task, handoff.task_id)
     if task is not None:
         task.status = task_status_for(status)
         # One alert per transition: the key carries the event id so a task that blocks twice alerts twice.
         suffix = event_id or uuid4().hex
-        if changed and status == "blocked":
+        if fire and status == "blocked":
             await _alert_once(
                 db, f"blocked:{echelon_id}:{suffix}", f"ECHELON is blocked on '{task.title}' and needs your answer."
             )
-        elif changed and status == "reconfirmation_required":
+        elif fire and status == "reconfirmation_required":
             await _alert_once(
                 db,
                 f"reconfirm:{echelon_id}:{suffix}",
