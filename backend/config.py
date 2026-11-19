@@ -56,6 +56,20 @@ class Settings(BaseSettings):
     MARCUS_SPEND_CAP_USD: float = 20.0
     MARCUS_SPEND_WARNING_PCT: float = 70.0
 
+    # Alert pings (all optional; a channel also needs to be enabled in Settings). Fixed generic text only.
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_WHATSAPP_FROM: str = ""  # number without the whatsapp: prefix
+    ALERT_WHATSAPP_TO: str = ""
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASS: str = ""
+    SMTP_FROM: str = ""
+    ALERT_EMAIL_TO: str = ""
+
     # Scheduling (local time in Victor's current time zone)
     DEFAULT_TIMEZONE: str = "America/Edmonton"
     MORNING_BRIEFING_TIME: str = "09:00"

@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import database
+from services.notify import ping_later
 from config import settings
 from models import Briefing, SpendLog
 
@@ -77,6 +78,7 @@ async def _alert_once(db: AsyncSession, key: str, text: str) -> None:
     if existing.first() is None:
         db.add(Briefing(kind="alert", key=key, text=text))
         await db.commit()
+        ping_later("alert", key)
 
 
 async def record_cost(amount: float, description: str, category: str = "llm") -> None:

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import database
 from models import Briefing, EchelonHandoff, Task
 from services import echelon_client as ec
+from services.notify import ping_later
 from services.settings_store import get_setting, set_setting
 from services.task_status import task_status_for
 
@@ -20,6 +21,7 @@ LAST_EVENT_KEY = "echelon_last_event_id"
 async def _alert_once(db: AsyncSession, key: str, text: str) -> None:
     if (await db.execute(select(Briefing.id).where(Briefing.key == key))).first() is None:
         db.add(Briefing(kind="alert", key=key, text=text))
+        ping_later("alert", key)
 
 
 async def apply_event(db: AsyncSession, data: dict, event_id: Optional[str] = None) -> bool:

@@ -8,6 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 import database
 from config import settings
 from services.briefing import create_briefing
+from services.notify import ping_later
 from services.settings_store import get_setting, set_setting
 
 log = logging.getLogger("marcus.scheduler")
@@ -25,6 +26,7 @@ def _job(kind: str):
         async with database.AsyncSessionLocal() as db:
             row = await create_briefing(db, kind)
             log.info("briefing stored: %s (%s)", kind, row.id)
+            ping_later("briefing", str(row.id))
 
     run.__name__ = f"briefing_{kind}"
     return run
