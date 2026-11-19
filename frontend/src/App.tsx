@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import Icon, { IconName } from './components/Icon';
+import { BrandMark, BrandPartners, MarcusPortrait } from './components/Brand';
 import VoiceButton from './components/VoiceButton';
 import ChatView from './components/ChatView';
 import TaskList from './components/TaskList';
@@ -170,45 +172,110 @@ function App() {
     }
   };
 
+type NavItem = {path:string; label:string; icon:IconName; subtitle:string};
+const NAV:NavItem[] = [
+  {path:'/', label:'Conversation', icon:'chat', subtitle:'Your direct line to Marcus'},
+  {path:'/tasks', label:'Tasks', icon:'tasks', subtitle:'Track work and approvals'},
+  {path:'/briefings', label:'Briefings', icon:'briefings', subtitle:'The latest updates in one place'},
+  {path:'/memory', label:'Memory', icon:'memory', subtitle:'Review what Marcus retains'},
+  {path:'/settings', label:'Settings', icon:'settings', subtitle:'Preferences, alerts and controls'}
+];
+
+function Navigation({compact=false}:{compact?:boolean}) {
+  return <nav className={compact ? 'mobile-links' : 'sidebar-links'} aria-label={compact ? 'Mobile navigation' : 'Main navigation'}>
+    {NAV.map(item=><NavLink end={item.path==='/'} to={item.path} key={item.path} className={({isActive})=>'nav-item'+(isActive?' is-active':'')}>
+      <Icon name={item.icon} size={compact?20:19}/>
+      <span>{item.label}</span>
+      {!compact && <Icon name="chevron" size={15} className="nav-chevron"/>}
+    </NavLink>)}
+  </nav>;
+}
+
+function WorkspaceHeader(){
+  const location=useLocation();
+  const page=NAV.find(p=>p.path===location.pathname) || NAV[0];
+  return <header className="workspace-header">
+    <div className="mobile-brand"><BrandMark size={36}/><span>Marcus <strong>Vale</strong></span></div>
+    <div className="page-identity">
+      <div className="eyebrow">YOUR PRIVATE WORKSPACE <span aria-hidden="true">/</span> {page.label.toUpperCase()}</div>
+      <h1>{page.label}</h1>
+      <p>{page.subtitle}</p>
+    </div>
+    <div className="header-tools">
+      <span className="header-date"><Icon name="calendar" size={16}/>{new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</span>
+      <span className="private-label"><Icon name="lock" size={14}/>Private assistant</span>
+    </div>
+  </header>;
+}
+
   return (
     <Router>
-      <div className="app">
-        <header className="header">
-          <h1>Marcus Vale</h1>
-          <p>Executive Assistant to Victor Igboekwe</p>
-          <nav>
-            <Link to="/">Chat</Link>
-            <Link to="/tasks">Tasks</Link>
-            <Link to="/briefings">Briefings</Link>
-            <Link to="/memory">Memory</Link>
-            <Link to="/settings">Settings</Link>
-          </nav>
-        </header>
-        
-        <main className="main">
-          <Routes>
-            <Route path="/" element={
-              <>
-                <ChatView messages={messages} />
-                <VoiceButton 
-                  isListening={isListening} 
-                  isSpeaking={isSpeaking}
-                  onStart={() => setIsListening(true)}
-                  onStop={() => setIsListening(false)}
-                  onPress={() => {
-                    unlockAudio();
-                    stopAll();
-                  }}
-                  onVoiceInput={handleVoiceInput}
-                />
-              </>
-            } />
-            <Route path="/tasks" element={<TaskList />} />
-            <Route path="/briefings" element={<Briefings />} />
-            <Route path="/memory" element={<MemoryReview />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </main>
+      <div className="app-shell">
+        <aside className="sidebar" aria-label="Marcus Vale navigation">
+          <div className="sidebar-brand">
+            <BrandMark size={48}/>
+            <div className="wordmark"><strong>Marcus Vale</strong><span>BY WHINK APPS</span></div>
+          </div>
+          <div className="sidebar-section-title">WORKSPACE</div>
+          <Navigation/>
+          <div className="sidebar-bottom">
+            <div className="assistant-mini">
+              <MarcusPortrait/>
+              <div><strong>Your executive assistant</strong><span>Here whenever you need him.</span></div>
+            </div>
+            <div className="sidebar-divider"/>
+            <span className="sidebar-section-title">PART OF THE WHINK FAMILY</span>
+            <BrandPartners/>
+          </div>
+        </aside>
+
+        <div className="workspace">
+          <WorkspaceHeader/>
+          <main className="workspace-content" id="main-content">
+            <Routes>
+              <Route path="/" element={
+                <section className="conversation-screen" aria-label="Conversation with Marcus">
+                  <div className="welcome-hero">
+                    <div className="hero-orbit hero-orbit-a" aria-hidden="true"/>
+                    <div className="hero-orbit hero-orbit-b" aria-hidden="true"/>
+                    <div className="welcome-copy">
+                      <span className="eyebrow hero-eyebrow"><span className="status-point"/> YOUR PRIVATE EXECUTIVE ASSISTANT</span>
+                      <h2>Good to have you here, <em>Victor.</em></h2>
+                      <p>One clear conversation. A calmer, more organized day. Tell Marcus what's on your mind and he'll help you move forward.</p>
+                      <div className="hero-tags"><span><Icon name="mic" size={14}/>Voice-first</span><span><Icon name="shield" size={14}/>Approval-led actions</span></div>
+                    </div>
+                    <MarcusPortrait className="hero-portrait"/>
+                    <div className="hero-signature"><span>MV</span><small>MARCUS VALE</small></div>
+                  </div>
+                  <div className="conversation-card">
+                    <div className="card-heading">
+                      <span><Icon name="chat" size={18}/> Conversation</span>
+                      <span className="caption-soft">Your messages appear here</span>
+                    </div>
+                    <ChatView messages={messages}/>
+                    <div className="voice-dock">
+                      <div className="voice-dock-copy"><span className="dock-label">READY WHEN YOU ARE</span><strong>Press and hold to talk with Marcus</strong><small>Release to send. You can interrupt a spoken reply.</small></div>
+                      <VoiceButton
+                        isListening={isListening}
+                        isSpeaking={isSpeaking}
+                        onStart={()=>setIsListening(true)}
+                        onStop={()=>setIsListening(false)}
+                        onPress={()=>{unlockAudio();stopAll();}}
+                        onVoiceInput={handleVoiceInput}
+                      />
+                    </div>
+                  </div>
+                </section>
+              }/>
+              <Route path="/tasks" element={<TaskList/>}/>
+              <Route path="/briefings" element={<Briefings/>}/>
+              <Route path="/memory" element={<MemoryReview/>}/>
+              <Route path="/settings" element={<Settings/>}/>
+            </Routes>
+          </main>
+          <footer className="workspace-footer"><span>Marcus Vale <span aria-hidden="true">·</span> A WHINK Apps experience</span><span>Thoughtfully built for the way you work.</span></footer>
+        </div>
+        <div className="mobile-navigation"><Navigation compact/></div>
       </div>
     </Router>
   );
