@@ -26,6 +26,7 @@ const saveApprovals = (a: Record<string, string>) => {
 };
 
 const errorText = (e: any): string => {
+  if (e?.response?.status === 429) return 'PIN locked, restart the backend or wait 15 minutes.';
   if (e?.response?.status === 403) return 'Wrong PIN.';
   const d = e?.response?.data?.detail;
   return typeof d === 'string' ? d : 'Request failed. Try again.';
@@ -121,6 +122,14 @@ const TaskList: React.FC = () => {
       setError('');
       load();
     } catch (e) {
+      const st = (e as any)?.response?.status;
+      if (st === 400 || st === 409) {
+        // The stored approval is spent or stale: forget it so Approve shows again.
+        const next = { ...approvals };
+        delete next[task.id];
+        setApprovals(next);
+        saveApprovals(next);
+      }
       fail(e);
     }
   };

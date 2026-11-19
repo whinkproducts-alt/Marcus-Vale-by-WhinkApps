@@ -191,3 +191,17 @@ async def test_subsidiary_fields_reach_echelon_and_bad_ids_are_refused(client, e
     assert a["content_hash"] == GOLDEN  # the hash covers title, goal and deadline only
     bad = await client.post("/tasks/", json={"title": "A", "goal": "B", "subsidiary": "nope"})
     assert bad.status_code == 422
+
+
+async def test_timeout_keeps_approval_spent_and_says_check_first(client, echelon, maker):
+    t = await make_task(client)
+    a = await approve(client, t["id"])
+
+    def boom(req):
+        raise httpx.ReadTimeout("slow", request=req)
+
+    echelon.handler = boom
+    r = await client.post("/echelon/handoff", params={"task_id": t["id"], "approval_id": a["id"]})
+    assert r.status_code == 502 and "Check the task status" in r.json()["detail"]
+    async with maker() as s:
+        assert (await s.get(Approval, uuid.UUID(a["id"]))).used is True

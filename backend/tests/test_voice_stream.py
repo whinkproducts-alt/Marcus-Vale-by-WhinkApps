@@ -110,3 +110,19 @@ async def test_never_store_turn_not_persisted(client, stream_llm, maker):
 
 async def test_requires_api_key(anon, stream_llm):
     assert (await anon.post("/voice/chat/stream", json={"prompt": "hi"})).status_code in (401, 403)
+
+
+async def test_aborted_stream_not_persisted(client, stream_llm, maker):
+    from routes import voice
+
+    async def aborted(*a, **k):
+        yield "First sentence. "
+        raise GeneratorExit  # client went away mid-reply
+
+    with patch.object(voice, "generate_stream", aborted):
+        try:
+            r = await client.post("/voice/chat/stream", json={"prompt": "hi", "session_id": "ab"})
+        except BaseException:
+            pass
+    async with maker() as s:
+        assert (await s.execute(select(ChatMessage).where(ChatMessage.session_id == "ab"))).scalars().all() == []

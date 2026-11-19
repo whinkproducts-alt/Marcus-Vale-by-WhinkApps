@@ -32,7 +32,7 @@ async def require_approval_pin(x_approval_pin: Optional[str] = Header(default=No
     global _fails, _locked_until
     refused = HTTPException(status_code=403, detail="approval pin required")
     if time.monotonic() < _locked_until:
-        raise refused
+        raise HTTPException(status_code=429, detail="approval pin locked")
     pin = settings.APPROVAL_PIN
     if pin and x_approval_pin and hmac.compare_digest(x_approval_pin.encode(), pin.encode()):
         _fails = 0

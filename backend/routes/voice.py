@@ -153,6 +153,7 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
 
     async def events():
         spoken: list[str] = []
+        clean = False
         try:
             if first is not None:
                 spoken.append(first)
@@ -160,14 +161,15 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
                 async for s in sentences:
                     spoken.append(s)
                     yield _sse("sentence", {"text": s})
+            clean = True
         except Exception as e:
             log.warning("chat stream failed mid-reply: %s", type(e).__name__)
             yield _sse("error", {"detail": "Marcus could not finish the reply"})
             return
         finally:
             await sentences.aclose()
-            # Runs on client abort too: a partial reply is saved only if clean.
-            if spoken:
+            # Runs on client abort too: only a reply that finished cleanly is saved.
+            if clean and spoken:
                 await _remember_turn(db, request.session_id, request.prompt, " ".join(spoken))
         yield _sse("done", {})
 

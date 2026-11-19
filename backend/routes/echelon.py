@@ -18,6 +18,8 @@ from services.task_status import DEAD_HANDOFF, task_status_for
 
 log = logging.getLogger("marcus.echelon")
 router = APIRouter()
+# Timeouts after the request left: the task may have arrived. Connect and pool timeouts mean it did not.
+SENT_MAYBE = ("ReadTimeout", "WriteTimeout")
 
 
 def _check_approval(task: Task, approval: Approval) -> None:
@@ -117,6 +119,13 @@ async def create_handoff(task_id: UUID, approval_id: UUID, db: AsyncSession = De
     try:
         response = await ec.send_task(payload)
     except Exception as e:
+        if isinstance(e, ec.EchelonError) and e.status is None and e.code in SENT_MAYBE:
+            # ECHELON may have the task already; releasing would invite a second send. Victor checks first.
+            log.warning("handoff timed out: %s", e.code)
+            raise HTTPException(
+                status_code=502,
+                detail="ECHELON did not answer in time and may have received the task. Check the task status before approving again.",
+            )
         await _release(db, approval)
         if isinstance(e, ec.EchelonError):
             log.warning("handoff failed: %s", e.public_message())

@@ -151,7 +151,7 @@ async def test_five_wrong_pins_lock_out_even_the_right_pin(anon, echelon, caplog
     assert "approval pin failure 5" in logged
     assert PIN not in logged and "guess-number" not in logged  # counts only, never a value
     locked = await anon.post("/control/resume", headers={**KEY, "X-Approval-Pin": PIN})
-    assert locked.status_code == 403 and locked.json() == BAD
+    assert locked.status_code == 429 and locked.json() == {"detail": "approval pin locked"}
     auth._locked_until = auth.time.monotonic() - 1  # the 15 minutes pass
     assert (await anon.post("/control/resume", headers={**KEY, "X-Approval-Pin": PIN})).status_code == 200
 
