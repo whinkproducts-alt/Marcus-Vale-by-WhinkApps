@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     # OmniRoute (self-hosted gateway)
     OMNIROUTE_BASE_URL: str = "http://127.0.0.1:20128/v1"
     OMNIROUTE_MODEL: str = DEFAULT_MODEL
+    # Faster model for voice turns. Empty means use OMNIROUTE_MODEL.
+    OMNIROUTE_VOICE_MODEL: str = ""
     # Cost estimates in USD per 1M tokens. Override in .env with your real rates.
     OMNIROUTE_PRICE_IN_PER_1M: float = 0.15
     OMNIROUTE_PRICE_OUT_PER_1M: float = 0.60

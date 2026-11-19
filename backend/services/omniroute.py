@@ -1,3 +1,5 @@
+import json
+
 import httpx
 from typing import List, Optional
 
@@ -86,3 +88,61 @@ async def generate(
     cost, note = spend.llm_cost(data.get("usage"), "".join(m["content"] for m in messages), reply)
     await spend.record_cost(cost, f"chat {model_name} ({note})", "llm")
     return reply
+
+
+async def generate_stream(
+    prompt: str,
+    model: Optional[str] = None,
+    max_tokens: int = 1024,
+    temperature: float = 0.4,
+    history: Optional[List[dict]] = None,
+    core_facts: Optional[List[str]] = None,
+):
+    """Yield text deltas from OmniRoute. Budget is checked before the first yield (raises SpendCapReached);
+    cost is recorded when the stream ends, even if the caller stops early."""
+    await spend.ensure_budget()
+    model_name = model or settings.OMNIROUTE_VOICE_MODEL or settings.OMNIROUTE_MODEL
+    messages = [{"role": "system", "content": build_system_prompt(core_facts)}]
+    messages += history or []
+    messages.append({"role": "user", "content": prompt})
+    parts: List[str] = []
+    usage = None
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            async with client.stream(
+                "POST",
+                f"{settings.OMNIROUTE_BASE_URL}/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {settings.OMNIROUTE_API_KEY}",
+                },
+                json={
+                    "model": model_name,
+                    "messages": messages,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "stream": True,
+                    "stream_options": {"include_usage": True},
+                },
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    payload = line[5:].strip()
+                    if payload == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(payload)
+                    except ValueError:
+                        continue
+                    usage = chunk.get("usage") or usage
+                    for choice in chunk.get("choices") or []:
+                        delta = (choice.get("delta") or {}).get("content")
+                        if delta:
+                            parts.append(delta)
+                            yield delta
+    finally:
+        if parts:
+            cost, note = spend.llm_cost(usage, "".join(m["content"] for m in messages), "".join(parts))
+            await spend.record_cost(cost, f"voice {model_name} ({note})", "llm")
