@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import Icon from './Icon';
 
 const API_BASE = '/api';
 const POLL_MS = 10000;
@@ -173,7 +174,7 @@ const TaskList: React.FC = () => {
       <div key={task.id} className="task">
         <h4>{task.title}</h4>
         <p>{task.goal}</p>
-        <span className={`status ${task.status}`}>{task.status}</span>
+        <span className={`status ${task.status}`}>{task.status.replace(/_/g, ' ')}</span>
         {info.echelonStatus && <span className="status"> ECHELON: {info.echelonStatus}</span>}
         {info.stale && <p>Status may be out of date: ECHELON did not answer.</p>}
         {task.status === 'pending' && !approvals[task.id] && (
@@ -201,59 +202,61 @@ const TaskList: React.FC = () => {
     );
   };
 
-  const lane = (key: string, title: string) => (
-    <div className="lane">
-      <h3>{title}</h3>
-      {tasks.filter((t) => t.lane === key).map(renderTask)}
-    </div>
-  );
+  const lane = (key: string, title: string) => {
+    const items=tasks.filter(t=>t.lane===key);
+    return <section className="lane" aria-label={title} key={key}>
+      <h3>{title}<span>{items.length} {items.length===1?'task':'tasks'}</span></h3>
+      {items.length ? items.map(renderTask) : <div className="empty-state"><Icon name="tasks" size={25}/><strong>All clear</strong>No tasks in this lane yet.</div>}
+    </section>;
+  };
+  const pending=tasks.filter(t=>t.status==='pending' || t.status==='awaiting_confirmation').length;
+  const active=tasks.filter(t=>['in_progress','handed_off','blocked'].includes(t.status)).length;
+  const finished=tasks.filter(t=>t.status==='done').length;
 
   return (
     <div className="task-list">
-      <h2>Tasks</h2>
-
-      <div className="task-form">
-        <input
-          type="password"
-          autoComplete="off"
-          placeholder="Approval PIN (kept in memory only)"
-          value={pin}
-          onChange={(e) => setPin(e.target.value)}
-        />
-        {frozen ? (
-          <button disabled={!pin} onClick={resume}>
-            Resume Marcus (frozen)
-          </button>
-        ) : (
-          <button onClick={freeze}>Freeze everything</button>
-        )}
+      <div className="page-intro">
+        <div><span className="eyebrow">WORK MANAGEMENT</span><h2>Keep things moving.</h2><p>Give Marcus the goal, oversee approvals, and follow every handoff.</p></div>
       </div>
+      <div className="metric-strip" aria-label="Task overview">
+        <div className="metric"><Icon className="metric-icon" name="tasks"/><span className="metric-label">Total tasks</span><strong>{tasks.length}</strong></div>
+        <div className="metric"><Icon className="metric-icon" name="clock"/><span className="metric-label">Need attention</span><strong>{pending}</strong></div>
+        <div className="metric"><Icon className="metric-icon" name="check"/><span className="metric-label">Completed</span><strong>{finished}</strong></div>
+      </div>
+      <section className="control-panel" aria-label="Assistant control">
+        <div><h3><Icon name={frozen?'pause':'shield'} size={16}/> {frozen?'Execution is frozen':'You stay in control'}</h3><p>Approvals require your PIN. Freezing stops new execution until you resume.</p></div>
+        <div className="control-actions">
+          <label className="visually-hidden" htmlFor="task-pin">Approval PIN</label>
+          <input id="task-pin" type="password" autoComplete="off" placeholder="Approval PIN" value={pin} onChange={e=>setPin(e.target.value)}/>
+          {frozen
+            ? <button className="action-button" disabled={!pin} onClick={resume}><Icon name="refresh" size={15}/>Resume Marcus</button>
+            : <button className="action-button danger-button" onClick={freeze}><Icon name="pause" size={15}/>Freeze actions</button>}
+        </div>
+      </section>
       {error && <p role="alert">{error}</p>}
-
-      <div className="task-form">
-        <input
-          type="text"
-          placeholder="Task title"
-          value={newTask.title}
-          onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-        />
-        <textarea
-          placeholder="Task goal"
-          value={newTask.goal}
-          onChange={(e) => setNewTask({ ...newTask, goal: e.target.value })}
-        />
-        <select value={newTask.lane} onChange={(e) => setNewTask({ ...newTask, lane: e.target.value })}>
-          <option value="lane1">Lane 1 (Marcus)</option>
-          <option value="lane2">Lane 2 (ECHELON)</option>
-          <option value="lane3">Lane 3 (Victor)</option>
-        </select>
-        <button onClick={createTask}>Add Task</button>
-      </div>
-
+      <section className="task-form" aria-label="Create new task">
+        <h3>New task</h3>
+        <p>Set a clear goal. Marcus won't send it to ECHELON until you explicitly approve it.</p>
+        <div className="form-row">
+          <label className="field-label">Task title
+            <input type="text" placeholder="What needs to get done?" value={newTask.title} onChange={e=>setNewTask({...newTask,title:e.target.value})}/>
+          </label>
+          <label className="field-label">Assigned lane
+            <select value={newTask.lane} onChange={e=>setNewTask({...newTask,lane:e.target.value})}>
+              <option value="lane1">Marcus · Intake</option><option value="lane2">ECHELON · Execution</option><option value="lane3">Victor · Review</option>
+            </select>
+          </label>
+        </div>
+        <label className="field-label">Goal and context
+          <textarea placeholder="Describe the outcome you need…" value={newTask.goal} onChange={e=>setNewTask({...newTask,goal:e.target.value})}/>
+        </label>
+        <div><button className="action-button" onClick={createTask} disabled={!newTask.title.trim() || !newTask.goal.trim()}><Icon name="plus" size={16}/>Create task</button></div>
+      </section>
+      <div className="page-intro"><div><span className="eyebrow">YOUR WORKFLOW</span><h2>Three lanes. One view.</h2><p>{active} currently active · {pending} needing attention</p></div></div>
       <div className="lanes">
-        {lane('lane1', '📌 Lane 1 (Marcus)')}
-        {lane('lane2', '🤖 Lane 2 (ECHELON)')}
-        {lane('lane3', '👤 Lane 3 (Victor)')}
+        {lane('lane1','Marcus · Intake')}
+        {lane('lane2','ECHELON · Execution')}
+        {lane('lane3','Victor · Review')}
       </div>
     </div>
   );

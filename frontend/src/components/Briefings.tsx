@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Icon from './Icon';
 
 const API_BASE = '/api';
 
@@ -34,24 +35,33 @@ const Briefings: React.FC = () => {
     }
   };
 
+  const unread=briefings.filter(b=>!b.delivered).length;
   return (
     <div className="task-list">
-      <h2>Briefings</h2>
-      {error && <p>{error}</p>}
-      {!error && briefings.length === 0 && <p>No briefings yet.</p>}
-      {briefings.map((b) => (
-        <div key={b.id} className="task">
-          <h4>
-            {b.kind.replace('_', ' ')} · {new Date(b.created_at).toLocaleString()}
-          </h4>
+      <div className="page-intro">
+        <div><span className="eyebrow">EXECUTIVE INTELLIGENCE</span><h2>Your briefings, at a glance.</h2><p>Updates worth your attention, organized in one quiet place.</p></div>
+        <button className="action-button secondary-button" type="button" onClick={load}><Icon name="refresh" size={16}/>Refresh</button>
+      </div>
+      <div className="metric-strip" aria-label="Briefing overview">
+        <div className="metric"><Icon name="briefings" className="metric-icon"/><span className="metric-label">Total briefings</span><strong>{briefings.length}</strong></div>
+        <div className="metric"><Icon name="bell" className="metric-icon"/><span className="metric-label">Unread</span><strong>{unread}</strong></div>
+        <div className="metric"><Icon name="check" className="metric-icon"/><span className="metric-label">Read</span><strong>{briefings.length-unread}</strong></div>
+      </div>
+      {error && <p role="alert">{error}</p>}
+      {!error && briefings.length===0 &&
+        <div className="section empty-state"><Icon name="briefings" size={35}/><strong>Your briefing desk is clear.</strong>New briefings will appear here when available.</div>}
+      <div className="briefing-stack">
+        {briefings.map(b=><article key={b.id} className="briefing-entry">
+          <div className="briefing-entry-header">
+            <div><span className="eyebrow">MARCUS VALE / BRIEFING</span><h3>{b.kind.replace(/_/g,' ')}</h3>
+              <time dateTime={b.created_at}>{new Date(b.created_at).toLocaleString()}</time>
+            </div>
+            <span className={'status '+(b.delivered?'done':'pending')}>{b.delivered?'Read':'Unread'}</span>
+          </div>
           <p className="briefing-text">{b.text}</p>
-          {b.delivered ? (
-            <span className="status done">read</span>
-          ) : (
-            <button onClick={() => markDelivered(b.id)}>Mark as read</button>
-          )}
-        </div>
-      ))}
+          {!b.delivered && <button className="action-button" onClick={()=>markDelivered(b.id)}><Icon name="check" size={15}/>Mark as read</button>}
+        </article>)}
+      </div>
     </div>
   );
 };
