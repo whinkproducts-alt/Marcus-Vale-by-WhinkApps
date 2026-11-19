@@ -17,7 +17,7 @@ Marcus Vale is a **private, voice-first executive assistant** for Victor Igboekw
 ### Prerequisites
 - Docker + Docker Compose
 - Node.js 20+ (for frontend)
-- Python 3.11+ (for backend)
+- Python 3.11 or 3.12 for the backend (the Docker image uses 3.11). 3.13 is not supported: the pinned asyncpg 0.29 does not build and the pinned SQLAlchemy fails on import.
 
 ### 1. Clone & Configure
 ```bash
