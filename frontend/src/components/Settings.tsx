@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Icon from './Icon';
+import { MarcusPortrait } from './Brand';
 
 const API_BASE = '/api';
 
@@ -64,58 +66,56 @@ const Settings: React.FC = () => {
     }
   };
 
+  const percent=spendStatus && spendStatus.cap>0 ? Math.max(0,Math.min(100,spendStatus.total_spend/spendStatus.cap*100)) : 0;
+  const money=(value:number)=>'$'+value.toFixed(2);
   return (
     <div className="settings">
-      <h2>⚙️ Settings</h2>
-      
-      <div className="section">
-        <h3>💰 Spend Cap</h3>
-        {spendStatus && (
-          <div className="spend-status">
-            <p>Total Spend: ${spendStatus.total_spend.toFixed(2)}</p>
-            <p>Cap: ${spendStatus.cap.toFixed(2)}</p>
-            <p>Warning Threshold: ${spendStatus.warning_threshold.toFixed(2)}</p>
-            <p className={spendStatus.is_warning ? 'warning' : spendStatus.is_blocked ? 'error' : ''}>
-              Status: {spendStatus.is_blocked ? 'BLOCKED' : spendStatus.is_warning ? 'WARNING' : 'OK'}
-            </p>
-          </div>
-        )}
-      </div>
-      
-      <div className="section">
-        <h3>🔔 Alerts</h3>
-        <p>Only a generic ping, never your tasks or briefing text.</p>
-        {Object.keys(LABELS).map((k) => (
-          <label key={k} style={{ display: 'block' }}>
-            <input
-              type="checkbox"
-              disabled={!chans[k]?.configured}
-              checked={!!picked[k]}
-              onChange={(e) => setPicked({ ...picked, [k]: e.target.checked })}
-            />{' '}
-            {LABELS[k]}
-            {chans[k] && !chans[k].configured ? ' (not configured)' : ''}
+      <div className="page-intro"><div><span className="eyebrow">YOUR ASSISTANT, YOUR RULES</span><h2>Make it yours.</h2><p>Manage spending limits, private alerts, voice services and integrations.</p></div></div>
+      <div className="settings-grid">
+        <section className="section settings-profile">
+          <h3><Icon name="spark" size={19}/>Meet your assistant</h3>
+          <div className="profile-row"><MarcusPortrait/><div><span className="eyebrow">MARCUS VALE</span><strong>Your executive assistant</strong><small>Private assistant to Victor Igboekwe</small></div></div>
+          <p className="small-note">Built for thoughtful assistance, clear approvals and a consistent daily workflow.</p>
+        </section>
+        <section className="section">
+          <h3><Icon name="wallet" size={19}/>Spending overview</h3>
+          <p className="section-intro">Live values reported by the backend. Limits are not changed from this screen.</p>
+          {spendStatus?<div className="spend-status">
+            <div className="spend-figures"><strong>{money(spendStatus.total_spend)}</strong><span>of {money(spendStatus.cap)} limit</span></div>
+            <div className="spend-track" role="progressbar" aria-label="Spend as a percentage of cap" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)}><span style={{width:percent+'%'}}/></div>
+            <div className="spend-meta"><span>Warning at {money(spendStatus.warning_threshold)}</span><span>{percent.toFixed(0)}% of cap used</span></div>
+            <span className={'status '+(spendStatus.is_blocked?'failed':spendStatus.is_warning?'pending':'done')}>{spendStatus.is_blocked?'Spend blocked':spendStatus.is_warning?'Approaching cap':'Within limit'}</span>
+          </div>:<p className="small-note">Spending status unavailable. Connect to the backend to view current values.</p>}
+        </section>
+        <section className="section">
+          <h3><Icon name="bell" size={19}/>Notifications & alerts</h3>
+          <p className="section-intro">Only generic alerts are sent. Your tasks and briefing content stay out of notifications.</p>
+          {Object.entries(LABELS).map(([key,label])=><div className="setting-row" key={key}>
+            <div><span className="setting-name">{label}</span><small>{chans[key]?.configured?'Available for notifications':'Not configured on the server'}</small></div>
+            <label className="switch" aria-label={'Enable '+label+' alerts'}>
+              <input type="checkbox" disabled={!chans[key]?.configured} checked={!!picked[key]} onChange={e=>setPicked({...picked,[key]:e.target.checked})}/>
+              <span className="slider"/>
+            </label>
+          </div>)}
+          <label className="field-label" htmlFor="alert-approval-pin" style={{marginTop:16}}>Approval PIN
+            <input id="alert-approval-pin" type="password" autoComplete="off" placeholder="Required to save alert preferences" value={alertPin} onChange={e=>setAlertPin(e.target.value)}/>
           </label>
-        ))}
-        <input
-          type="password"
-          placeholder="Approval PIN"
-          value={alertPin}
-          onChange={(e) => setAlertPin(e.target.value)}
-        />
-        <button onClick={saveChans}>Save</button>
-        {alertMsg && <p>{alertMsg}</p>}
-      </div>
-
-      <div className="section">
-        <h3>🔊 Voice Settings</h3>
-        <p>STT: Whisper (via OmniRoute)</p>
-        <p>TTS: Kokoro (via OmniRoute)</p>
-      </div>
-      
-      <div className="section">
-        <h3>🤖 ECHELON Integration</h3>
-        <p>Status: Connected</p>
+          <button onClick={saveChans} disabled={!alertPin}><Icon name="check" size={15}/>Save alert preferences</button>
+          {alertMsg && <p role="status" className="small-note">{alertMsg}</p>}
+        </section>
+        <section className="section">
+          <h3><Icon name="volume" size={19}/>Voice services</h3>
+          <p className="section-intro">Your voice-first workflow is configured through backend services.</p>
+          <div className="connection-item"><span>Speech to text</span><strong>Whisper · OmniRoute</strong></div>
+          <div className="connection-item"><span>Text to speech</span><strong>Kokoro · OmniRoute</strong></div>
+          <p className="small-note">Press and hold the voice button in Conversation to record a request.</p>
+        </section>
+        <section className="section settings-wide">
+          <h3><Icon name="link" size={19}/>ECHELON integration</h3>
+          <p className="section-intro">Task handoffs are managed by ECHELON after explicit approval. This page does not independently verify its connection.</p>
+          <div className="connection-item"><span>Execution</span><strong>Approval-gated</strong></div>
+          <div className="connection-item"><span>Connection state</span><strong>Check individual task handoffs</strong></div>
+        </section>
       </div>
     </div>
   );
