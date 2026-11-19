@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Icon from './Icon';
 
 const API_BASE = '/api';
 
@@ -35,48 +36,36 @@ const MemoryReview: React.FC = () => {
     }
   };
 
+  const layers=[
+    {key:'layer1',title:'Original transcripts',description:'Layer 1 · Immutable history'},
+    {key:'layer2',title:'Core facts',description:'Layer 2 · Important context'},
+    {key:'layer3',title:'Searchable memory',description:'Layer 3 · Indexed information'}
+  ];
   return (
     <div className="memory-review">
-      <h2>🧠 Memory Review</h2>
-      
-      <div className="memory-search">
-        <input
-          type="text"
-          placeholder="Search memories..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <button onClick={searchMemories}>Search</button>
+      <div className="page-intro"><div><span className="eyebrow">KNOWLEDGE & CONTEXT</span><h2>Everything in context.</h2><p>Review the information Marcus has stored, organized by memory layer.</p></div></div>
+      <div className="metric-strip" aria-label="Memory overview">
+        <div className="metric"><Icon name="memory" className="metric-icon"/><span className="metric-label">Visible memories</span><strong>{memories.length}</strong></div>
+        <div className="metric"><Icon name="briefings" className="metric-icon"/><span className="metric-label">Transcripts</span><strong>{memories.filter(m=>m.layer==='layer1').length}</strong></div>
+        <div className="metric"><Icon name="search" className="metric-icon"/><span className="metric-label">Indexed entries</span><strong>{memories.filter(m=>m.layer==='layer3').length}</strong></div>
       </div>
-      
+      <form className="memory-search" onSubmit={e=>{e.preventDefault();searchQuery.trim()?searchMemories():fetchMemories();}}>
+        <label className="visually-hidden" htmlFor="memory-query">Search saved memories</label>
+        <input id="memory-query" type="search" placeholder="Search your saved context…" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
+        <button type="submit"><Icon name="search" size={16}/>Search</button>
+      </form>
       <div className="layers">
-        <div className="layer">
-          <h3>📜 Layer 1 (Immutable Transcript)</h3>
-          {memories.filter(m => m.layer === 'layer1').map(memory => (
-            <div key={memory.id} className="memory">
+        {layers.map(layer=>{
+          const list=memories.filter(m=>m.layer===layer.key);
+          return <section className="layer" key={layer.key} aria-label={layer.title}>
+            <span className="eyebrow">{layer.description}</span>
+            <h3>{layer.title}<span>{list.length}</span></h3>
+            {list.length?list.map(memory=><article className="memory" key={memory.id}>
               <p>{memory.content}</p>
-              <small>{new Date(memory.timestamp).toLocaleString()} | {memory.source}</small>
-            </div>
-          ))}
-        </div>
-        <div className="layer">
-          <h3>📌 Layer 2 (Core Facts)</h3>
-          {memories.filter(m => m.layer === 'layer2').map(memory => (
-            <div key={memory.id} className="memory">
-              <p>{memory.content}</p>
-              <small>{new Date(memory.timestamp).toLocaleString()} | {memory.source}</small>
-            </div>
-          ))}
-        </div>
-        <div className="layer">
-          <h3>🔍 Layer 3 (Searchable Store)</h3>
-          {memories.filter(m => m.layer === 'layer3').map(memory => (
-            <div key={memory.id} className="memory">
-              <p>{memory.content}</p>
-              <small>{new Date(memory.timestamp).toLocaleString()} | {memory.source}</small>
-            </div>
-          ))}
-        </div>
+              <small><time dateTime={memory.timestamp}>{new Date(memory.timestamp).toLocaleString()}</time> · {memory.source}</small>
+            </article>):<div className="empty-state"><Icon name="memory" size={24}/><strong>Nothing here yet.</strong>No entries found in this layer.</div>}
+          </section>
+        })}
       </div>
     </div>
   );
