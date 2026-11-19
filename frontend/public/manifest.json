@@ -4,9 +4,15 @@
   "description": "Private voice-first executive assistant for Victor Igboekwe",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#007AFF",
+  "background_color": "#081421",
+  "theme_color": "#081421",
   "icons": [
+    {
+      "src": "/marcus-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "/icon-192x192.png",
       "sizes": "192x192",
