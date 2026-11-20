@@ -1,10 +1,10 @@
 import React from 'react';
 
-const BASE = 'https://raw.githubusercontent.com/whinkproducts-alt/ECHELON-INTEGRATIONS/main/apps/web/public';
 export const BRAND_ASSETS = {
-  marcus: BASE + '/board/marcus-vale.webp',
-  apps: BASE + '/assets/official/subsidiaries/whink-apps.webp',
-  group: BASE + '/assets/official/brand/whink-group.webp',
+  marcus: '/brand/marcus-vale.webp',
+  apps: '/brand/whink-apps.webp',
+  group: '/brand/whink-group.webp',
+  resumeEngine: '/brand/resume-engine.svg',
 };
 
 export function BrandMark({size=44, className=''}:{size?:number;className?:string}) {
@@ -36,5 +36,8 @@ export function BrandPartners() {
     <a href="https://github.com/whinkproducts-alt" rel="noreferrer" target="_blank" title="WHINK Apps">
       <img src={BRAND_ASSETS.apps} alt="WHINK Apps" loading="lazy" />
     </a>
+    <span className="brand-tile" title="Resume Engine">
+      <img src={BRAND_ASSETS.resumeEngine} alt="Resume Engine" loading="lazy" />
+    </span>
   </div>;
 }

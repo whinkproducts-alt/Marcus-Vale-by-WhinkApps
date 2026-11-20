@@ -209,7 +209,8 @@ function WorkspaceHeader(){
 }
 
   return (
-    <Router>
+    <Router future={{v7_startTransition:true,v7_relativeSplatPath:true}}>
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <div className="app-shell">
         <aside className="sidebar" aria-label="Marcus Vale navigation">
           <div className="sidebar-brand">
