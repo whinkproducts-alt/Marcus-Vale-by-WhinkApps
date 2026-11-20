@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Icon from './Icon';
-import { MarcusPortrait } from './Brand';
+import { BrandMark } from './Brand';
 
 const API_BASE = '/api';
 
@@ -21,6 +21,9 @@ const Settings: React.FC = () => {
   // The PIN lives in React memory only: never localStorage, never a cookie.
   const [alertPin, setAlertPin] = useState('');
   const [alertMsg, setAlertMsg] = useState('');
+  const [voice,setVoice]=useState('am_michael');
+  const [voices,setVoices]=useState<Array<{id:string;label:string}>>([]);
+  const [voiceMsg,setVoiceMsg]=useState('');
 
   const loadChans = async () => {
     try {
@@ -55,7 +58,13 @@ const Settings: React.FC = () => {
   useEffect(() => {
     fetchSpendStatus();
     loadChans();
+    axios.get(`${API_BASE}/settings/voice`).then(r=>{setVoice(r.data.voice);setVoices(r.data.choices||[]);}).catch(()=>setVoiceMsg('Voice choices are unavailable.'));
   }, []);
+
+  const saveVoice=async()=>{
+    try{const r=await axios.put(`${API_BASE}/settings/voice`,{voice});setVoice(r.data.voice);setVoiceMsg('Voice updated.');}
+    catch{setVoiceMsg('Could not update the voice.');}
+  };
 
   const fetchSpendStatus = async () => {
     try {
@@ -74,7 +83,7 @@ const Settings: React.FC = () => {
       <div className="settings-grid">
         <section className="section settings-profile">
           <h3><Icon name="spark" size={19}/>Meet your assistant</h3>
-          <div className="profile-row"><MarcusPortrait/><div><span className="eyebrow">MARCUS VALE</span><strong>Your executive assistant</strong><small>Private assistant to Victor Igboekwe</small></div></div>
+          <div className="profile-row"><BrandMark size={88}/><div><span className="eyebrow">MARCUS VALE</span><strong>Your executive assistant</strong><small>Private assistant to Victor Igboekwe</small></div></div>
           <p className="small-note">Built for thoughtful assistance, clear approvals and a consistent daily workflow.</p>
         </section>
         <section className="section">
@@ -105,9 +114,12 @@ const Settings: React.FC = () => {
         </section>
         <section className="section">
           <h3><Icon name="volume" size={19}/>Voice services</h3>
-          <p className="section-intro">Your voice-first workflow is configured through backend services.</p>
+          <p className="section-intro">Choose the voice Marcus uses in conversation. The selection is stored in the backend.</p>
           <div className="connection-item"><span>Speech to text</span><strong>Whisper · OmniRoute</strong></div>
           <div className="connection-item"><span>Text to speech</span><strong>Kokoro · OmniRoute</strong></div>
+          <label className="field-label voice-choice">Marcus voice<select value={voice} onChange={e=>setVoice(e.target.value)}>{voices.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+          <button onClick={saveVoice} disabled={!voices.length}><Icon name="check" size={15}/>Use this voice</button>
+          {voiceMsg&&<p role="status" className="small-note">{voiceMsg}</p>}
           <p className="small-note">Press and hold the voice button in Conversation to record a request.</p>
         </section>
         <section className="section settings-wide">

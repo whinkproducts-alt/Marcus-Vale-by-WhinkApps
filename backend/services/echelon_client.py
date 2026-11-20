@@ -1,5 +1,6 @@
 """Client for ECHELON's Marcus integration. Nothing here logs or returns task content."""
 import json
+import re
 from typing import Any, AsyncIterator, Dict, Optional, Tuple
 
 import httpx
@@ -112,6 +113,16 @@ async def resume_task(echelon_task_id: str, note: Optional[str]) -> Dict[str, An
 
 async def get_task(echelon_task_id: str) -> Dict[str, Any]:
     return await _call("GET", f"/tasks/{echelon_task_id}", (200,))
+
+
+async def list_dashboards() -> Dict[str, Any]:
+    return await _call("GET", "/dashboards", (200,))
+
+
+async def get_dashboard(dashboard_id: str) -> Dict[str, Any]:
+    if not re.fullmatch(r"[a-z0-9-]{1,64}", dashboard_id):
+        raise EchelonError(404, "unknown_dashboard")
+    return await _call("GET", f"/dashboards/{dashboard_id}", (200,))
 
 
 async def freeze_echelon() -> Dict[str, Any]:

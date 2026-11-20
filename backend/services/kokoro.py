@@ -16,7 +16,7 @@ def content_type() -> str:
     return CONTENT_TYPES.get(settings.KOKORO_FORMAT, "application/octet-stream")
 
 
-async def synthesize(text: str, language: str = "en") -> bytes:
+async def synthesize(text: str, language: str = "en", voice: str | None = None) -> bytes:
     """Returns raw audio bytes in settings.KOKORO_FORMAT. Kokoro picks the language from the voice."""
     async with _client() as client:
         response = await client.post(
@@ -24,7 +24,7 @@ async def synthesize(text: str, language: str = "en") -> bytes:
             json={
                 "model": "kokoro",
                 "input": text,
-                "voice": settings.KOKORO_VOICE,
+                "voice": voice or settings.KOKORO_VOICE,
                 "response_format": settings.KOKORO_FORMAT,
                 "speed": 1.0,
             },

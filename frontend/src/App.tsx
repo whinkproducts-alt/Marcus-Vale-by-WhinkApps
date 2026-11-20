@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import Icon, { IconName } from './components/Icon';
-import { BrandMark, BrandPartners, MarcusPortrait } from './components/Brand';
+import { BrandMark, BrandPartners } from './components/Brand';
 import VoiceButton from './components/VoiceButton';
 import ChatView from './components/ChatView';
 import TaskList from './components/TaskList';
 import MemoryReview from './components/MemoryReview';
 import Settings from './components/Settings';
 import Briefings from './components/Briefings';
+import Calls from './components/Calls';
+import EchelonDashboards from './components/EchelonDashboards';
+import AvatarPulse, { PresenceMode } from './components/AvatarPulse';
 import axios from 'axios';
 
 const API_BASE = '/api';
@@ -18,6 +21,8 @@ function App() {
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([]);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [callActive, setCallActive] = useState(false);
+  const setCallPresence = useCallback((active:boolean)=>setCallActive(active),[]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // iOS Safari only lets audio start from a user gesture, so the one element is made and unlocked in the press.
@@ -175,6 +180,8 @@ function App() {
 type NavItem = {path:string; label:string; icon:IconName; subtitle:string};
 const NAV:NavItem[] = [
   {path:'/', label:'Conversation', icon:'chat', subtitle:'Your direct line to Marcus'},
+  {path:'/calls', label:'Calls', icon:'phone', subtitle:'PIN-approved outbound calls'},
+  {path:'/echelon', label:'ECHELON', icon:'dashboard', subtitle:'Live owner-scoped dashboards'},
   {path:'/tasks', label:'Tasks', icon:'tasks', subtitle:'Track work and approvals'},
   {path:'/briefings', label:'Briefings', icon:'briefings', subtitle:'The latest updates in one place'},
   {path:'/memory', label:'Memory', icon:'memory', subtitle:'Review what Marcus retains'},
@@ -221,7 +228,7 @@ function WorkspaceHeader(){
           <Navigation/>
           <div className="sidebar-bottom">
             <div className="assistant-mini">
-              <MarcusPortrait/>
+              <BrandMark size={44}/>
               <div><strong>Your executive assistant</strong><span>Here whenever you need him.</span></div>
             </div>
             <div className="sidebar-divider"/>
@@ -245,8 +252,7 @@ function WorkspaceHeader(){
                       <p>One clear conversation. A calmer, more organized day. Tell Marcus what's on your mind and he'll help you move forward.</p>
                       <div className="hero-tags"><span><Icon name="mic" size={14}/>Voice-first</span><span><Icon name="shield" size={14}/>Approval-led actions</span></div>
                     </div>
-                    <MarcusPortrait className="hero-portrait"/>
-                    <div className="hero-signature"><span>MV</span><small>MARCUS VALE</small></div>
+                    <div className="hero-mark" aria-hidden="true"><BrandMark size={210}/><div><span>PRIVATE</span><strong>MARCUS VALE</strong><small>VOICE · CALLS · ECHELON</small></div></div>
                   </div>
                   <div className="conversation-card">
                     <div className="card-heading">
@@ -269,6 +275,8 @@ function WorkspaceHeader(){
                 </section>
               }/>
               <Route path="/tasks" element={<TaskList/>}/>
+              <Route path="/calls" element={<Calls onCallStateChange={setCallPresence}/>}/>
+              <Route path="/echelon" element={<EchelonDashboards/>}/>
               <Route path="/briefings" element={<Briefings/>}/>
               <Route path="/memory" element={<MemoryReview/>}/>
               <Route path="/settings" element={<Settings/>}/>
@@ -278,6 +286,7 @@ function WorkspaceHeader(){
         </div>
         <div className="mobile-navigation"><Navigation compact/></div>
       </div>
+      <AvatarPulse mode={(isListening?'listening':callActive?'calling':isSpeaking?'speaking':null) as PresenceMode|null}/>
     </Router>
   );
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type IconName = 'chat'|'tasks'|'briefings'|'memory'|'settings'|'chevron'|'arrow'|'spark'|'lock'|'calendar'|'activity'|'menu'|'check'|'plus'|'mic'|'shield'|'search'|'wallet'|'bell'|'volume'|'link'|'pause'|'refresh'|'clock'|'send';
+export type IconName = 'chat'|'tasks'|'briefings'|'memory'|'settings'|'chevron'|'arrow'|'spark'|'lock'|'calendar'|'activity'|'menu'|'check'|'plus'|'mic'|'shield'|'search'|'wallet'|'bell'|'volume'|'link'|'pause'|'refresh'|'clock'|'send'|'phone'|'dashboard';
 
 const shapes: Record<IconName, React.ReactNode> = {
   chat: <><path d="M20 11.5a8 8 0 0 1-8 8 9 9 0 0 1-3.9-.9L4 20l1.4-4.1A8 8 0 1 1 20 11.5Z"/><path d="M8 10h8M8 13.5h5"/></>,
@@ -27,7 +27,9 @@ const shapes: Record<IconName, React.ReactNode> = {
   pause: <><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></>,
   refresh: <><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9A7 7 0 0 1 18 7l2 5M4 12l2 5a7 7 0 0 0 12.4-2"/></>,
   clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></>,
-  send: <path d="m3 20 18-8L3 4l2 7 10 1-10 1-2 7Z"/>
+  send: <path d="m3 20 18-8L3 4l2 7 10 1-10 1-2 7Z"/>,
+  phone: <><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/></>,
+  dashboard: <><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></>
 };
 
 export default function Icon({name, size=20, className=''}: {name:IconName; size?:number; className?:string}) {

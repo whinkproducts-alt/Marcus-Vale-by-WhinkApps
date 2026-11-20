@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
+from config import settings
 from models import Approval, EchelonHandoff, Task
 from schemas import EchelonApproval, EchelonHandoffCreate, ResumeRequest
 from services import echelon_client as ec
@@ -225,3 +226,29 @@ async def get_handoff_status(task_id: UUID, db: AsyncSession = Depends(get_db)):
         stale = True  # say so; never pass stored status off as live
         log.warning("status refresh failed: %s", e.public_message())
     return {"handoff": handoff, "result_summary": result_summary, "stale": stale}
+
+
+@router.get("/dashboards")
+async def list_dashboards():
+    _need_echelon()
+    try:
+        data = await ec.list_dashboards()
+        dashboards = data.get("dashboards", [])
+        if isinstance(dashboards, list):
+            for item in dashboards:
+                if isinstance(item, dict) and isinstance(item.get("path"), str):
+                    item["href"] = f"{settings.ECHELON_BASE_URL.rstrip('/')}{item['path']}"
+        return data
+    except ec.EchelonError as exc:
+        raise _refused(exc)
+
+
+@router.get("/dashboards/{dashboard_id}")
+async def get_dashboard(dashboard_id: str):
+    _need_echelon()
+    try:
+        return await ec.get_dashboard(dashboard_id)
+    except ec.EchelonError as exc:
+        if exc.status == 404:
+            raise HTTPException(status_code=404, detail="Dashboard not found")
+        raise _refused(exc)
