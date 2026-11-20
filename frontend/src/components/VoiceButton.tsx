@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { acquireMicrophone } from '../lib/microphone-capture';
 import { recorderMime } from '../lib/recorder-mime';
+import Icon from './Icon';
 
 interface VoiceButtonProps {
   isListening: boolean;
@@ -89,8 +90,11 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ isListening, isSpeaking, onSt
       onPointerUp={stopRecording}
       onPointerCancel={stopRecording}
       onContextMenu={(e) => e.preventDefault()}
+      aria-live="polite"
+      aria-label={isListening ? 'Listening. Release to send' : isSpeaking ? 'Marcus is speaking. Hold to interrupt' : 'Hold to talk to Marcus'}
     >
-      {isListening ? '🎤 Listening...' : isSpeaking ? '🔊 Speaking...' : '🎤 Hold to Talk'}
+      <Icon name={isSpeaking ? 'volume' : 'mic'} size={18}/>
+      <span>{isListening ? 'Listening…' : isSpeaking ? 'Speaking…' : 'Hold to talk'}</span>
     </button>
   );
 };

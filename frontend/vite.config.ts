@@ -11,7 +11,7 @@ export default defineConfig({
         name: 'Marcus Vale',
         short_name: 'Marcus',
         description: 'Private voice-first executive assistant for Victor Igboekwe',
-        theme_color: '#000000',
+        theme_color: '#081421',
         icons: [
           {
             src: '/icon-192x192.png',

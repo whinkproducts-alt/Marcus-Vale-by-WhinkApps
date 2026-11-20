@@ -25,6 +25,15 @@ class SynthesizeRequest(BaseModel):
     language: str = "en"
 
 
+class CallCreate(BaseModel):
+    to: Optional[str] = Field(default=None, max_length=32)
+    message: str = Field(min_length=1, max_length=1200)
+
+
+class VoicePreference(BaseModel):
+    voice: str = Field(min_length=1, max_length=64)
+
+
 class ChatRequest(BaseModel):
     prompt: str = Field(min_length=1, max_length=8000)
     session_id: str = Field(default="default", max_length=64)

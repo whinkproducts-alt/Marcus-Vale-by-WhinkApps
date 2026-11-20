@@ -14,6 +14,7 @@ from schemas import ChatRequest, SynthesizeRequest, VoiceRequest
 from services.control_state import FROZEN_MESSAGE, get_frozen
 from services.freeze import do_freeze, kill_message
 from services.kokoro import content_type, synthesize
+from services.settings_store import get_setting
 from services.never_store import check
 from services.omniroute import generate, generate_stream
 from services.sentences import split_sentences_async
@@ -49,9 +50,10 @@ async def transcribe_voice(request: VoiceRequest):
 
 
 @router.post("/synthesize")
-async def synthesize_voice(body: SynthesizeRequest):
+async def synthesize_voice(body: SynthesizeRequest, db: AsyncSession = Depends(get_db)):
     try:
-        audio = await synthesize(body.text, body.language)
+        voice = await get_setting(db, "voice_choice", None)
+        audio = await synthesize(body.text, body.language, voice)
         return {"audio": base64.b64encode(audio).decode("utf-8"), "content_type": content_type()}
     except Exception as e:
         log.warning("synthesize failed: %s", type(e).__name__)

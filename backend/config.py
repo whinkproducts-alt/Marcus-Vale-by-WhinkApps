@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_WHATSAPP_FROM: str = ""  # number without the whatsapp: prefix
     ALERT_WHATSAPP_TO: str = ""
+    TWILIO_VOICE_FROM: str = ""  # E.164 number enabled for outbound voice
+    OWNER_PHONE_NUMBER: str = ""  # E.164 default destination; never returned by the API
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""

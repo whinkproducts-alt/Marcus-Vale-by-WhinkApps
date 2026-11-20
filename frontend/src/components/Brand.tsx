@@ -1,10 +1,10 @@
 import React from 'react';
 
-const BASE = 'https://raw.githubusercontent.com/whinkproducts-alt/ECHELON-INTEGRATIONS/main/apps/web/public';
 export const BRAND_ASSETS = {
-  marcus: BASE + '/board/marcus-vale.webp',
-  apps: BASE + '/assets/official/subsidiaries/whink-apps.webp',
-  group: BASE + '/assets/official/brand/whink-group.webp',
+  marcus: '/brand/marcus-vale.webp',
+  apps: '/brand/whink-apps.webp',
+  group: '/brand/whink-group.webp',
+  resumeEngine: '/brand/resume-engine.svg',
 };
 
 export function BrandMark({size=44, className=''}:{size?:number;className?:string}) {
@@ -13,11 +13,12 @@ export function BrandMark({size=44, className=''}:{size?:number;className?:strin
       <linearGradient id="mv-gold" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#FFF2B9"/><stop offset=".48" stopColor="#D6AA57"/><stop offset="1" stopColor="#A37435"/></linearGradient>
       <linearGradient id="mv-blue" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#76DFFB"/><stop offset=".55" stopColor="#3187EE"/><stop offset="1" stopColor="#144FA6"/></linearGradient>
     </defs>
-    <rect x="2" y="2" width="76" height="76" rx="21" fill="#081421" stroke="url(#mv-gold)" strokeWidth="2"/>
-    <path d="M17 57V24l23 23 23-23v33" fill="none" stroke="url(#mv-gold)" strokeWidth="7" strokeLinecap="square" strokeLinejoin="miter"/>
-    <path d="M10 55c13 13 47-5 59-24" stroke="url(#mv-blue)" strokeWidth="3.2" fill="none" strokeLinecap="round"/>
-    <path d="M15 25c18-10 42-10 54 5" stroke="#D6AA57" strokeWidth="1.7" opacity=".85" fill="none"/>
-    <circle cx="68" cy="30" r="4" fill="#AAEEFF" stroke="#2B9FED" strokeWidth="1.2"/>
+    <circle cx="40" cy="40" r="37" fill="#081421" stroke="url(#mv-gold)" strokeWidth="2"/>
+    <path d="M18 56V24l22 22 22-22v32" fill="none" stroke="#4f3517" strokeWidth="10" strokeLinejoin="round"/>
+    <path d="M18 56V24l22 22 22-22v32" fill="none" stroke="url(#mv-gold)" strokeWidth="6.5" strokeLinejoin="round"/>
+    <ellipse cx="40" cy="40" rx="34" ry="13" fill="none" stroke="url(#mv-blue)" strokeWidth="2.8" transform="rotate(-16 40 40)"/>
+    <path d="M28 30 40 43 52 30" fill="none" stroke="#96e8ff" strokeWidth="1.5" opacity=".8"/>
+    <circle cx="70" cy="31" r="3.8" fill="#FFF2B9" stroke="#D6AA57" strokeWidth="1.4"/>
   </svg>;
 }
 
@@ -36,5 +37,8 @@ export function BrandPartners() {
     <a href="https://github.com/whinkproducts-alt" rel="noreferrer" target="_blank" title="WHINK Apps">
       <img src={BRAND_ASSETS.apps} alt="WHINK Apps" loading="lazy" />
     </a>
+    <span className="brand-tile" title="Resume Engine">
+      <img src={BRAND_ASSETS.resumeEngine} alt="Resume Engine" loading="lazy" />
+    </span>
   </div>;
 }

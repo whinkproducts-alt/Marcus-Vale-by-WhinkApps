@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from database import init_db
-from routes import approvals, briefings, control, echelon, memory, spend, tasks, voice
+from routes import approvals, briefings, calls, control, echelon, memory, spend, tasks, voice
 from routes import settings as settings_routes
 from services.approval_retire import retire_pre_pin_approvals
 from services.auth import require_api_key
@@ -59,6 +59,7 @@ app.include_router(spend.router, prefix="/spend", tags=["spend"], dependencies=_
 app.include_router(control.router, prefix="/control", tags=["control"], dependencies=_auth)
 app.include_router(briefings.router, prefix="/briefings", tags=["briefings"], dependencies=_auth)
 app.include_router(settings_routes.router, prefix="/settings", tags=["settings"], dependencies=_auth)
+app.include_router(calls.router, prefix="/calls", tags=["calls"], dependencies=_auth)
 
 
 @app.get("/health")
